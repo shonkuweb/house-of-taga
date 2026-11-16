@@ -1,139 +1,128 @@
 import React from 'react';
-import { ArrowRight, Sparkles } from 'lucide-react';
-import { FashionPlaceholder } from './Placeholders';
 import { useStore } from '../context/StoreContext';
+import { FloralDivider, MughalArchCard } from './FloralDecorations';
 
 export const ShopByCategory = ({ onSelectCategory }) => {
   const { categories, activeCategory, setActiveCategory } = useStore();
-
-  // Separate featured major cards from circular pills
-  const featuredCards = categories.filter(c => c.displayType === 'featured_card');
-  const circularCategories = categories.filter(c => c.displayType === 'circular_pill');
 
   const handleCategoryClick = (slug) => {
     setActiveCategory(slug);
     if (onSelectCategory) {
       onSelectCategory(slug);
     }
+    const catalogEl = document.getElementById('catalog-section');
+    if (catalogEl) {
+      catalogEl.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
-  // If no categories exist, don't render empty header
-  if (categories.length === 0) {
-    return null;
-  }
+  // Fallback category items matching the exact 4 required in the prompt
+  const displayCategories = [
+    {
+      id: 'cat_kurtas',
+      name: 'Kurtas',
+      slug: 'kurtas',
+      subtitle: 'Artisanal Everyday Silhouettes',
+      imageUrl: '/category-kurtas.jpg',
+    },
+    {
+      id: 'cat_sarees',
+      name: 'Sarees',
+      slug: 'sarees',
+      subtitle: 'Handwoven Chanderi & Silks',
+      imageUrl: '/category-sarees.jpg',
+    },
+    {
+      id: 'cat_coord',
+      name: 'Co-ord Sets',
+      slug: 'coord-sets',
+      subtitle: 'Modern Ease & Linen Cuts',
+      imageUrl: '/category-coord.jpg',
+    },
+    {
+      id: 'cat_festive',
+      name: 'Festive Edit',
+      slug: 'festive-edit',
+      subtitle: 'Opulent Zari & Kashmiri Yokes',
+      imageUrl: '/category-festive.jpg',
+    },
+  ];
 
   return (
-    <section className="py-6 sm:py-8 bg-[#FAF8F5] transition-all">
+    <section 
+      id="category-section" 
+      aria-label="Shop by Category"
+      className="py-10 sm:py-14 bg-[#FAF2E9] transition-all"
+    >
       <div className="max-w-md md:max-w-4xl lg:max-w-6xl mx-auto px-4">
         
-        {/* Section Divider Title: "— Shop by Category —" */}
-        <div className="flex items-center justify-center gap-3 sm:gap-6 mb-6 sm:mb-8">
-          <span className="h-[0.5px] flex-1 max-w-[50px] sm:max-w-[120px] bg-[#DAC6B4]"></span>
-          <h2 className="font-serif text-xl sm:text-2xl md:text-3xl text-[#1E1A17] font-normal tracking-wide text-center">
-            Shop by Category
-          </h2>
-          <span className="h-[0.5px] flex-1 max-w-[50px] sm:max-w-[120px] bg-[#DAC6B4]"></span>
-        </div>
+        {/* Section Heading with terracotta hairlines and floral ornaments */}
+        <FloralDivider 
+          title="Shop by Category" 
+          subtitle="TIMELESS SILHOUETTES • THOUGHTFUL DETAILS"
+        />
 
-        {/* 1. Two Featured Large Category Cards side-by-side */}
-        {featuredCards.length > 0 && (
-          <div className="grid grid-cols-2 gap-3 sm:gap-5 mb-7 sm:mb-9">
-            {featuredCards.map((card) => {
-              const isSelected = activeCategory === card.slug;
-              return (
-                <div
-                  key={card.id}
-                  onClick={() => handleCategoryClick(card.slug)}
-                  className={`group relative aspect-[3/4] sm:aspect-[4/5] rounded-xl overflow-hidden cursor-pointer shadow-sm transition-all duration-300 transform hover:-translate-y-1 ${
-                    isSelected ? 'ring-2 ring-brand-600 ring-offset-2' : ''
+        {/* 
+          Four Image Category Cards:
+          - Custom Mughal/Maharashtrian-inspired arch-shaped image frames
+          - Thin terracotta borders
+          - Warm cream background
+          - Elegant serif category labels
+          - Responsive grid (2 cols on mobile, 4 cols on tablet/desktop)
+        */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-5 lg:gap-6">
+          {displayCategories.map((cat) => {
+            const isSelected = activeCategory === cat.slug;
+
+            return (
+              <div
+                key={cat.id}
+                onClick={() => handleCategoryClick(cat.slug)}
+                className="group flex flex-col items-center cursor-pointer select-none"
+              >
+                {/* Cusped Mughal Arch Frame */}
+                <div 
+                  className={`w-full aspect-[3/4] relative overflow-hidden bg-[#FFF9F2] rounded-t-[44px] rounded-b-2xl border transition-all duration-500 shadow-xs group-hover:shadow-editorial group-hover:-translate-y-1 ${
+                    isSelected 
+                      ? 'border-[#B65A37] ring-2 ring-[#B65A37]/30 ring-offset-2' 
+                      : 'border-[#B65A37]/30 group-hover:border-[#B65A37]'
                   }`}
                 >
-                  {/* Visual Background Placeholder / Image */}
-                  <FashionPlaceholder 
-                    type={card.placeholderKey || 'ethnic_featured'} 
-                    imageUrl={card.imageUrl}
-                    alt={card.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  {/* Category Image */}
+                  <img
+                    src={cat.imageUrl}
+                    alt={cat.name}
+                    className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                    loading="lazy"
                   />
 
-                  {/* Dark gradient overlay to ensure text contrast matching screenshot */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent flex flex-col justify-end p-3.5 sm:p-5 text-white" />
+                  {/* Soft Warm Gradient at bottom for text readability if needed */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#382017]/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
-                  {/* Content overlay */}
-                  <div className="relative z-10 p-3.5 sm:p-5 flex flex-col justify-end h-full">
-                    <h3 className="font-serif text-sm sm:text-lg md:text-xl font-medium tracking-wider text-white uppercase leading-tight mb-1">
-                      {card.name}
-                    </h3>
-                    <p className="text-[11px] sm:text-xs text-[#EAE0D4] font-serif italic mb-3 opacity-90">
-                      {card.subtitle}
-                    </p>
-                    
-                    <div className="inline-flex items-center gap-1.5 self-start bg-black/50 hover:bg-[#9B1B30] backdrop-blur-xs border border-white/30 px-3.5 sm:px-4 py-1.5 rounded-full text-[9px] sm:text-[11px] font-semibold tracking-wider uppercase text-white transition-all shadow-xs">
-                      <span>SHOP NOW</span>
-                      <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-                    </div>
+                  {/* Inner Arch Dotted Filigree */}
+                  <div className="absolute inset-1 rounded-t-[40px] rounded-b-xl border border-dashed border-[#C69B52]/40 pointer-events-none" />
+
+                  {/* Subtle "EXPLORE" pill on hover */}
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                    <span className="px-3 py-1 bg-[#FFF9F2]/90 backdrop-blur-xs text-[#B65A37] text-[10px] font-sans font-bold uppercase tracking-wider rounded-full shadow-xs">
+                      Explore
+                    </span>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
 
-        {/* 2. Circular Subcategory Avatars row */}
-        {circularCategories.length > 0 && (
-          <div className="py-2">
-            <div className="grid grid-cols-4 gap-2 sm:gap-4 max-w-lg mx-auto">
-              {circularCategories.map((cat) => {
-                const isSelected = activeCategory === cat.slug;
-                return (
-                  <button
-                    key={cat.id}
-                    onClick={() => handleCategoryClick(cat.slug)}
-                    className="flex flex-col items-center group focus:outline-none"
-                  >
-                    {/* Circle Image Wrapper matching screenshot */}
-                    <div 
-                      className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden p-1 transition-all duration-300 ${
-                        isSelected 
-                          ? 'ring-2 ring-brand-600 ring-offset-2 scale-105 shadow-md bg-brand-100' 
-                          : 'bg-[#F2ECE4] group-hover:ring-1 group-hover:ring-brand-400 group-hover:scale-105'
-                      }`}
-                    >
-                      <div className="w-full h-full rounded-full overflow-hidden bg-white shadow-inner flex items-center justify-center">
-                        <FashionPlaceholder 
-                          type={cat.placeholderKey || 'kurta'} 
-                          imageUrl={cat.imageUrl}
-                          alt={cat.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Category Label beneath circle in serif font */}
-                    <span className={`mt-2 font-serif text-[11px] sm:text-xs tracking-tight text-center transition-colors line-clamp-1 ${
-                      isSelected ? 'font-semibold text-brand-800' : 'text-[#3E3834] group-hover:text-brand-700'
-                    }`}>
-                      {cat.name}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Active Category Filter Reset pill if filtered */}
-        {activeCategory !== 'all' && (
-          <div className="mt-4 flex items-center justify-center">
-            <button
-              onClick={() => setActiveCategory('all')}
-              className="inline-flex items-center gap-1.5 text-xs text-brand-700 hover:text-brand-900 bg-brand-100/70 hover:bg-brand-100 px-3 py-1 rounded-full transition-colors border border-brand-200"
-            >
-              <span>Showing filtered products</span>
-              <span className="font-semibold underline">Show All Products</span>
-            </button>
-          </div>
-        )}
+                {/* Category Label */}
+                <div className="mt-2.5 text-center">
+                  <h3 className="font-serif text-base sm:text-lg font-medium text-[#382017] group-hover:text-[#B65A37] transition-colors leading-tight">
+                    {cat.name}
+                  </h3>
+                  <p className="text-[11px] font-sans text-[#8C6F5A] font-light mt-0.5 line-clamp-1">
+                    {cat.subtitle}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
 
       </div>
     </section>

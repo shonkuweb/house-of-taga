@@ -49,16 +49,16 @@ export const CartDrawer = () => {
       />
 
       {/* Slide Drawer with 100dvh for mobile viewport accuracy */}
-      <div className="relative w-full max-w-md bg-[#FAF7F2] h-[100dvh] max-h-[100dvh] shadow-2xl z-10 flex flex-col justify-between overflow-hidden animate-slideInRight">
+      <div className="relative w-full max-w-md bg-[#FAF2E9] h-[100dvh] max-h-[100dvh] shadow-2xl z-10 flex flex-col justify-between overflow-hidden animate-slideInRight">
         
         {/* Cart Header */}
-        <div className="p-4 sm:p-5 border-b border-[#EAE0D4] flex items-center justify-between bg-white shrink-0">
+        <div className="p-4 sm:p-5 border-b border-[#E8D9C8] flex items-center justify-between bg-[#FFF9F2] shrink-0">
           <div className="flex items-center gap-2">
-            <ShoppingBag className="w-5 h-5 text-brand-700" />
-            <h2 className="font-serif text-lg font-medium text-[#221B16]">
+            <ShoppingBag className="w-5 h-5 text-[#B65A37]" />
+            <h2 className="font-serif text-lg font-medium text-[#382017]">
               Your Shopping Bag
             </h2>
-            <span className="text-xs bg-brand-100 text-brand-800 px-2 py-0.5 rounded-full font-medium">
+            <span className="text-xs bg-[#FAF2E9] text-[#B65A37] px-2 py-0.5 rounded-full font-medium">
               {cart.length} {cart.length === 1 ? 'piece' : 'pieces'}
             </span>
           </div>
@@ -212,7 +212,7 @@ export const CartDrawer = () => {
             <button
               type="button"
               onClick={handleProceedToCheckout}
-              className="w-full py-4 bg-[#7A112A] hover:bg-[#640B20] active:bg-[#4F0718] text-white rounded-full text-xs uppercase tracking-widest font-semibold flex items-center justify-center gap-2 shadow-md hover:shadow-lg shadow-[#7A112A]/25 transition-all active:scale-98 cursor-pointer touch-manipulation"
+              className="w-full py-4 bg-[#B65A37] hover:bg-[#A7472B] active:bg-[#8C3E20] text-white rounded-full text-xs uppercase tracking-widest font-semibold flex items-center justify-center gap-2 shadow-md hover:shadow-lg shadow-[#B65A37]/25 transition-all active:scale-98 cursor-pointer touch-manipulation"
             >
               <span>Proceed to Checkout</span>
               <ArrowRight className="w-4 h-4" />

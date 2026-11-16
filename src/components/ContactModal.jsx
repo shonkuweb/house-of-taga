@@ -46,7 +46,7 @@ export const ContactModal = () => {
 
     // Prepare formatted WhatsApp message
     const formattedMessage = 
-`✨ *NEW INQUIRY - POOJA LACE HUB SURAT* ✨
+`✨ *NEW INQUIRY - HOUSE OF TAAGA* ✨
 ━━━━━━━━━━━━━━━━━━━━
 👤 *Customer Name:* ${formData.name.trim()}
 📱 *Phone Number:* ${formData.phone.trim()}
@@ -54,7 +54,7 @@ export const ContactModal = () => {
 💬 *Message:*
 ${formData.message.trim()}
 ━━━━━━━━━━━━━━━━━━━━
-_Sent via Pooja Lace HUB Boutique Portal (Surat)_`;
+_Sent via House of Taaga Boutique Portal_`;
 
     const whatsappUrl = `https://wa.me/${BUSINESS_WHATSAPP_NUMBER}?text=${encodeURIComponent(formattedMessage)}`;
 
@@ -102,7 +102,7 @@ _Sent via Pooja Lace HUB Boutique Portal (Surat)_`;
                 Message Received!
               </h3>
               <p className="text-xs text-neutral-600 mt-1">
-                Redirecting to Pooja Lace HUB WhatsApp in a moment...
+                Redirecting to House of Taaga WhatsApp in a moment...
               </p>
             </div>
 
@@ -122,13 +122,13 @@ _Sent via Pooja Lace HUB Boutique Portal (Surat)_`;
                 <LotusIcon className="w-8 h-6 text-[#D4AF37]" />
               </div>
               <h3 className="font-serif text-xl font-medium text-[#221B16]">
-                Contact Pooja Lace HUB Surat
+                Contact House of Taaga
               </h3>
               <p className="text-[11px] text-[#796455] font-light mt-0.5">
-                Surat Wholesale & Retail Hub • WhatsApp: <strong>+91 93133 06258</strong>
+                Rooted in love. Worn with grace.
               </p>
               <p className="text-[10px] text-[#7A112A] mt-0.5">
-                📍 U-2A, Regent Arcade, Ghod Dod Road, Surat • @pooja_lace_hub_surat
+                WhatsApp: <strong>+91 93133 06258</strong> • @house_of_taaga
               </p>
             </div>
 

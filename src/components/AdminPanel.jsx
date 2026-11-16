@@ -31,7 +31,6 @@ import {
 import { useStore, ORDER_STAGES } from '../context/StoreContext';
 import { FashionPlaceholder } from './Placeholders';
 import { api } from '../services/api';
-import poojaLaceHubLogo from '../assets/pooja_lace_hub_logo.png';
 
 // Client-side image compression helper: keeps aspect ratio, max 1200px, quality JPEG
 const compressImage = (file) => {
@@ -430,7 +429,7 @@ export const AdminPanel = ({ onClose }) => {
       .map(i => `• ${i.product?.title || i.title || 'Item'} (x${i.quantity || 1})`)
       .join('\n');
 
-    const msg = `Hello ${order.customerName || 'Customer'}! Thank you for ordering from Pooja Lace HUB Surat (Order #${order.id}).\n\nItems:\n${itemsText}\n\nTotal: ₹${(order.total || 0).toLocaleString('en-IN')}\nStatus: ${order.statusTitle || 'Processing'}\n\nWe are preparing your package!`;
+    const msg = `Hello ${order.customerName || 'Customer'}! Thank you for ordering from House of Taaga (Order #${order.id}).\n\nItems:\n${itemsText}\n\nTotal: ₹${(order.total || 0).toLocaleString('en-IN')}\nStatus: ${order.statusTitle || 'Processing'}\n\nWe are preparing your package!`;
     
     const url = `https://wa.me/${phoneWithCode}?text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank');
@@ -574,12 +573,10 @@ export const AdminPanel = ({ onClose }) => {
           
           {/* Logo & Portal Badge */}
           <div className="flex items-center gap-3">
-            <div className="bg-white/10 p-1 rounded-xl backdrop-blur-xs">
-              <img 
-                src={poojaLaceHubLogo} 
-                alt="Pooja Lace HUB Surat" 
-                className="h-9 w-auto object-contain" 
-              />
+            <div className="py-0.5">
+              <span className="font-serif text-lg font-bold tracking-[0.12em] uppercase text-white">
+                House of Taaga
+              </span>
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -1157,7 +1154,7 @@ export const AdminPanel = ({ onClose }) => {
                   </label>
                   <input
                     type="text"
-                    value={storeConfig.storeName || 'Pooja Lace HUB Surat'}
+                    value={storeConfig.storeName || 'House of Taaga'}
                     onChange={(e) => setStoreConfig(prev => ({ ...prev, storeName: e.target.value }))}
                     className="w-full px-4 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#7A112A]/30"
                   />

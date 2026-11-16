@@ -1,69 +1,70 @@
 import React from 'react';
 import { HeroSection } from '../components/HeroSection';
+import { ShopByCategory } from '../components/ShopByCategory';
 import { ProductCatalog } from '../components/ProductCatalog';
-import { MapPin, Phone, Sparkles } from 'lucide-react';
-import { useStore } from '../context/StoreContext';
-
-const InstagramIcon = ({ className = "w-3.5 h-3.5" }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
-  </svg>
-);
+import { OurStorySection } from '../components/OurStorySection';
+import { TaagaJournalSection } from '../components/TaagaJournalSection';
+import { TrustFeaturesSection } from '../components/TrustFeaturesSection';
+import { PuneHeritageSection } from '../components/PuneHeritageSection';
+import { Footer } from '../components/Footer';
 
 export const HomePage = () => {
-  const { storeConfig } = useStore();
-  const phone = storeConfig?.whatsappNumber || '+91 93133 06258';
-  const cleanPhone = phone.replace(/[^0-9]/g, '');
-  const locationText = storeConfig?.location || 'U-2A, Regent Arcade (Mall), Ghod Dod Road, Surat-395007';
-  const instagramHandle = storeConfig?.instagram || 'pooja_lace_hub_surat';
-
   return (
-    <div className="w-full bg-[#FAF7F2]">
+    <div className="w-full bg-[#FAF2E9] overflow-x-hidden">
       {/* 
-        1. HERO BANNER: Full-width edge-to-edge on mobile, naturally placed without boxes,
-        no CTAs, no overlays, pure 1:1 banner image from Cloudflare R2.
+        SECTION 3: HERO BANNER
+        Edge-to-edge on mobile, 16:9 banner with accessible CTA overlay,
+        3 carousel dots, swipe support.
       */}
       <HeroSection />
 
       {/* 
-        2. ELEGANT SURAT BOUTIQUE BRAND STRIP:
-        Clean, minimal luxury sub-bar giving instant boutique credibility and direct contacts.
+        SECTION 4: SHOP BY CATEGORY
+        Centered heading with floral divider, 4 arch-shaped image category cards:
+        1. Kurtas, 2. Sarees, 3. Co-ord Sets, 4. Festive Edit
       */}
-      <div className="border-y border-[#EAE0D4] bg-white/70 backdrop-blur-xs py-2.5 px-4">
-        <div className="max-w-3xl mx-auto flex flex-wrap items-center justify-center gap-x-6 gap-y-1.5 text-[11px] sm:text-xs text-[#5C4538]">
-          <span className="flex items-center gap-1.5 font-medium">
-            <MapPin className="w-3.5 h-3.5 text-[#7A112A]" />
-            <span>{locationText}</span>
-          </span>
-
-          <a 
-            href={`https://wa.me/${cleanPhone}`} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 font-semibold text-[#241A1C] hover:text-[#7A112A] transition-colors"
-          >
-            <Phone className="w-3.5 h-3.5 text-[#7A112A]" />
-            <span>{phone}</span>
-          </a>
-
-          <a 
-            href={`https://instagram.com/${instagramHandle}`} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-[#7A6455] hover:text-[#7A112A] transition-colors font-medium"
-          >
-            <InstagramIcon className="w-3.5 h-3.5 text-[#D4AF37]" />
-            <span>@{instagramHandle}</span>
-          </a>
-        </div>
-      </div>
+      <ShopByCategory />
 
       {/* 
-        3. CURATED BOUTIQUE COLLECTION
+        SECTION 5: NEW & NOTEWORTHY
+        Centered heading with floral divider, 2-column mobile grid,
+        wishlist heart, INR prices, dynamic products.
       */}
       <ProductCatalog />
+
+      {/* 
+        SECTION 6: OUR STORY
+        Warm handmade-paper texture with soft torn edges, bougainvillea corners,
+        rotated photo frame with mother-daughter photo, story narrative, terracotta CTA.
+      */}
+      <OurStorySection />
+
+      {/* 
+        SECTION 7: THE TAAGA JOURNAL
+        Centered heading: "The Taaga Journal"
+        Subtitle: "LOOKBOOK • PEOPLE • BEHIND THE LABEL"
+        Horizontally scrollable editorial cards.
+      */}
+      <TaagaJournalSection />
+
+      {/* 
+        SECTION 8: TRUST FEATURES
+        Minimalist 3-column mobile row: Pan-India Shipping, Secure Payments, Friendly Support.
+      */}
+      <TrustFeaturesSection />
+
+      {/* 
+        SECTION 9: PUNE HERITAGE FOOTER ARTWORK
+        Hand-drawn terracotta line art of Shaniwar Wada in Pune,
+        hills, foliage, corner flowers, "Proudly rooted in Pune ♡".
+      */}
+      <PuneHeritageSection />
+
+      {/* 
+        SECTION 10: FUNCTIONAL FOOTER
+        Brand logo, collections, story, care links, socials, newsletter.
+      */}
+      <Footer />
     </div>
   );
 };

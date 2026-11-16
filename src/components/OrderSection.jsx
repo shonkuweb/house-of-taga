@@ -195,7 +195,7 @@ export const OrderSection = () => {
                       </h2>
 
                       <p className="text-xs sm:text-sm text-emerald-50/90 font-light mt-1.5 max-w-lg leading-relaxed">
-                        Your handcrafted Pooja Lace HUB pieces have arrived safely. We hope you cherish every detail of your handcrafted laces and embellishments!
+                        Your handcrafted House of Taaga pieces have arrived safely. We hope you cherish every detail of your handcrafted Indian wear!
                       </p>
                     </div>
                   </div>
@@ -273,17 +273,17 @@ export const OrderSection = () => {
                   </div>
                   <div>
                     <h4 className="text-xs sm:text-sm font-bold text-[#1C1E21]">
-                      Thank You for Choosing Pooja Lace HUB Surat!
+                      Thank You for Choosing House of Taaga!
                     </h4>
                     <p className="text-[11px] text-neutral-600 mt-0.5">
-                      Need custom orders, design advice, or assistance from our Surat studio?
+                      Need custom styling advice or assistance from our studio?
                     </p>
                   </div>
                 </div>
 
                 <a
                   href={`https://wa.me/${whatsappPhone}?text=${encodeURIComponent(
-                    `Hello Pooja Lace HUB Surat! I received my order #${searchedOrder.id} and would love to share feedback / get styling assistance.`
+                    `Hello House of Taaga! I received my order #${searchedOrder.id} and would love to share feedback / get styling assistance.`
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"

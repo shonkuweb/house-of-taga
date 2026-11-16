@@ -1,8 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingBag, Eye, Sparkles, Camera } from 'lucide-react';
-import { FashionPlaceholder } from './Placeholders';
+import { Heart, ShoppingBag, Eye, Sparkles } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { FloralDivider } from './FloralDecorations';
 
 export const ProductCatalog = () => {
   const navigate = useNavigate();
@@ -13,226 +13,205 @@ export const ProductCatalog = () => {
     setActiveCategory, 
     searchQuery, 
     addToCart,
+    wishlist,
+    toggleWishlist,
+    isWishlisted,
     setIsCartOpen 
   } = useStore();
 
-  // Filter products by category and search
-  const filteredProducts = products.filter(product => {
+  // Filter products dynamically by category and search
+  const filteredProducts = products.filter((product) => {
     if (!product) return false;
     const title = product.title || product.name || '';
     const desc = product.description || '';
-    const tag = product.tag || '';
+    const cat = (product.categorySlug || product.category || '').toLowerCase();
 
     if (searchQuery.trim().length > 0) {
       const q = searchQuery.toLowerCase();
       const matchTitle = title.toLowerCase().includes(q);
       const matchDesc = desc.toLowerCase().includes(q);
-      const matchTag = tag.toLowerCase().includes(q);
-      if (!matchTitle && !matchDesc && !matchTag) return false;
+      const matchCat = cat.includes(q);
+      if (!matchTitle && !matchDesc && !matchCat) return false;
     }
 
     if (activeCategory === 'all') return true;
-    const catSlug = (product.categorySlug || product.categoryId || '').toLowerCase();
-    const subSlug = (product.subCategorySlug || '').toLowerCase();
     const target = activeCategory.toLowerCase();
-    return catSlug === target || subSlug === target;
+    return cat === target || cat.includes(target);
   });
-
-  const getDiscount = (price, orig) => {
-    if (!orig || orig <= price) return null;
-    return Math.round(((orig - price) / orig) * 100);
-  };
 
   const handleOpenProductPage = (product) => {
     navigate(`/product/${product.id}`);
   };
 
+  const handleQuickAdd = (e, product) => {
+    e.stopPropagation();
+    addToCart(product, 1);
+    setIsCartOpen(true);
+  };
+
+  const handleWishlistClick = (e, productId) => {
+    e.stopPropagation();
+    toggleWishlist(productId);
+  };
+
   return (
-    <section id="catalog-section" className="py-8 bg-[#FAF8F5]">
+    <section 
+      id="catalog-section" 
+      aria-label="New & Noteworthy Collection" 
+      className="py-10 sm:py-16 bg-[#FAF2E9]"
+    >
       <div className="max-w-md md:max-w-4xl lg:max-w-6xl mx-auto px-4">
         
-        {/* Section Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 pb-3 border-b border-[#EAE0D4]">
-          <div>
-            <div className="flex items-center gap-1.5 text-[10px] tracking-[0.2em] uppercase font-semibold text-brand-700 mb-1">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Curated Selection</span>
-            </div>
-            <h2 className="font-serif text-2xl sm:text-3xl text-[#1E1A17] font-normal tracking-tight">
-              {activeCategory === 'all' 
-                ? 'The Complete Collection' 
-                : categories.find(c => c.slug === activeCategory)?.name || 'Filtered Collection'}
-            </h2>
-          </div>
+        {/* Section Heading with floral divider */}
+        <FloralDivider 
+          title="New & Noteworthy" 
+          subtitle="FRESH FROM THE PUNE STUDIO • LIMITED ARTISANAL RUNS"
+        />
 
-          <div className="mt-3 sm:mt-0 text-xs text-[#705E51]">
-            Showing <span className="font-semibold text-brand-900">{filteredProducts.length}</span> pieces
-          </div>
+        {/* Minimal Category Filter Pills */}
+        <div className="flex items-center justify-center gap-2 sm:gap-3 overflow-x-auto py-2 mb-8 scrollbar-none no-scrollbar">
+          <button
+            onClick={() => setActiveCategory('all')}
+            className={`px-4 py-1.5 rounded-full text-xs font-sans font-medium tracking-wider uppercase transition-all cursor-pointer whitespace-nowrap ${
+              activeCategory === 'all'
+                ? 'bg-[#B65A37] text-[#FFF9F2] shadow-xs'
+                : 'bg-white/80 text-[#382017] hover:bg-white border border-[#E8D9C8]'
+            }`}
+          >
+            All Pieces
+          </button>
+          {categories.map((c) => {
+            const isSelected = activeCategory === c.slug;
+            return (
+              <button
+                key={c.id || c.slug}
+                onClick={() => setActiveCategory(c.slug)}
+                className={`px-4 py-1.5 rounded-full text-xs font-sans font-medium tracking-wider uppercase transition-all cursor-pointer whitespace-nowrap ${
+                  isSelected
+                    ? 'bg-[#B65A37] text-[#FFF9F2] shadow-xs'
+                    : 'bg-white/80 text-[#382017] hover:bg-white border border-[#E8D9C8]'
+                }`}
+              >
+                {c.name}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Products Grid */}
+        {/* 
+          Mobile Product Grid:
+          - Two products per row on mobile (grid-cols-2)
+          - Consistent portrait image ratio (aspect-[3/4])
+          - Rounded image corners (rounded-2xl)
+          - Wishlist heart icon
+          - Product name
+          - Price in INR, sale price and original price
+          - Product detail navigation
+        */}
         {filteredProducts.length === 0 ? (
-          <div className="py-14 sm:py-18 text-center bg-white rounded-3xl border border-[#EAE0D4] p-6 sm:p-10 shadow-xs max-w-xl mx-auto space-y-4">
-            <div className="w-14 h-14 mx-auto rounded-full bg-[#FDF5F6] border border-[#F6CCD5] flex items-center justify-center text-[#7A112A]">
-              <Sparkles className="w-6 h-6 text-[#D4AF37]" />
-            </div>
-            <div>
-              <span className="text-[10px] tracking-[0.2em] uppercase font-bold text-[#D4AF37] block mb-1">
-                Pooja Lace HUB • Surat Studio
-              </span>
-              <h3 className="font-serif text-xl sm:text-2xl text-[#1E1A17] font-medium">
-                {products.length === 0 ? 'Fresh Artisan Arrivals Daily' : 'No pieces match your filter'}
-              </h3>
-              <p className="text-xs sm:text-sm text-neutral-500 max-w-md mx-auto mt-2 font-light leading-relaxed">
-                {products.length === 0 
-                  ? 'Our Surat studio curates exclusive Unique Laces, Designer Latkans, Brooches, Banjara patches, and Gota handwork daily. Reach out directly on WhatsApp to explore today’s collection or place custom orders.'
-                  : 'Try clearing your search query or category filter to view our complete collection.'}
-              </p>
-            </div>
-
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-              {activeCategory !== 'all' ? (
-                <button
-                  onClick={() => setActiveCategory('all')}
-                  className="px-6 py-3 bg-[#7A112A] hover:bg-[#640B20] text-white rounded-full text-xs uppercase tracking-wider font-semibold shadow-xs transition-colors cursor-pointer"
-                >
-                  View All Collections
-                </button>
-              ) : (
-                <a
-                  href={`https://wa.me/919313306258?text=${encodeURIComponent('Hello Pooja Lace HUB Surat! I would like to explore your latest laces, latkans and Banjara collection.')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full sm:w-auto px-6 py-3 bg-[#7A112A] hover:bg-[#640B20] text-white rounded-full text-xs uppercase tracking-widest font-semibold shadow-md transition-all active:scale-95 inline-flex items-center justify-center gap-2"
-                >
-                  <span>WhatsApp Studio (+91 93133 06258)</span>
-                </a>
-              )}
-            </div>
+          <div className="py-16 text-center bg-white/70 rounded-3xl border border-[#E8D9C8] p-8 max-w-md mx-auto space-y-3">
+            <Sparkles className="w-8 h-8 text-[#C69B52] mx-auto opacity-80" />
+            <h3 className="font-serif text-lg text-[#382017] font-medium">
+              No pieces match this filter
+            </h3>
+            <p className="text-xs text-[#8C6F5A]">
+              Try choosing another collection or view all handcrafted pieces.
+            </p>
+            <button
+              onClick={() => setActiveCategory('all')}
+              className="mt-2 px-5 py-2 bg-[#B65A37] text-white rounded-full text-xs uppercase tracking-wider font-medium hover:bg-[#A7472B] transition-colors"
+            >
+              View Complete Collection
+            </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3.5 sm:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-6">
             {filteredProducts.map((product) => {
-              const discount = getDiscount(product.price, product.originalPrice);
+              const hasDiscount = product.originalPrice && product.originalPrice > product.price;
+              const discountPercent = hasDiscount 
+                ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) 
+                : null;
+              const wishlisted = isWishlisted(product.id);
 
               return (
-                <div
+                <article
                   key={product.id}
-                  className="group bg-white rounded-xl overflow-hidden border border-[#EDE4D9] shadow-xs hover:shadow-card transition-all duration-300 flex flex-col justify-between"
+                  onClick={() => handleOpenProductPage(product)}
+                  className="group flex flex-col cursor-pointer select-none"
                 >
-                  {/* Top Image Card - Links to Product Page */}
-                  <div 
-                    onClick={() => handleOpenProductPage(product)}
-                    className="relative aspect-[3/4] w-full overflow-hidden bg-[#F3ECE4] cursor-pointer"
-                  >
-                    <FashionPlaceholder 
-                      type={product.placeholderKey || 'kurta'} 
-                      imageUrl={(product.images && product.images[0]) || product.imageUrl}
+                  {/* Portrait Product Image Card */}
+                  <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden bg-[#FFF9F2] border border-[#E8D9C8]/80 shadow-xs group-hover:shadow-editorial group-hover:-translate-y-1 transition-all duration-500">
+                    <img
+                      src={product.imageUrl || (product.images && product.images[0]) || '/category-kurtas.jpg'}
                       alt={product.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                      loading="lazy"
                     />
 
                     {/* Tag / Badge */}
                     {product.tag && (
-                      <div className="absolute top-2.5 left-2.5 z-10">
-                        <span className={`text-[9px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full text-white shadow-xs ${product.badgeColor || 'bg-brand-600'}`}>
-                          {product.tag}
-                        </span>
-                      </div>
+                      <span className="absolute top-2.5 left-2.5 bg-[#B65A37]/90 backdrop-blur-xs text-white text-[9px] font-sans font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full shadow-xs">
+                        {product.tag}
+                      </span>
                     )}
 
-                    {/* Stock badge if out of stock */}
-                    {product.stock !== undefined && product.stock <= 0 && (
-                      <div className="absolute top-2.5 right-2.5 z-10">
-                        <span className="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-rose-600 text-white shadow-xs">
-                          Sold Out
-                        </span>
-                      </div>
-                    )}
+                    {/* Wishlist Heart Icon */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleWishlistClick(e, product.id)}
+                      className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/85 hover:bg-white backdrop-blur-xs flex items-center justify-center transition-transform active:scale-90 shadow-xs cursor-pointer z-10"
+                      aria-label={wishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                    >
+                      <Heart 
+                        className={`w-4 h-4 transition-colors ${
+                          wishlisted 
+                            ? 'fill-[#D85179] text-[#D85179]' 
+                            : 'text-[#382017]/70 hover:text-[#D85179]'
+                        }`} 
+                      />
+                    </button>
 
-                    {/* Multi-photo indicator */}
-                    {Array.isArray(product.images) && product.images.length > 1 && (
-                      <div className="absolute bottom-2.5 left-2.5 z-10">
-                        <span className="text-[9px] font-medium bg-black/60 backdrop-blur-xs text-white px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
-                          <Camera className="w-2.5 h-2.5 text-amber-300" />
-                          <span>{product.images.length} photos</span>
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Quick View link indicator on hover */}
-                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <div className="px-3 py-1.5 bg-white/95 text-[#241F1C] rounded-full text-[10px] tracking-wider uppercase font-semibold shadow-md flex items-center gap-1">
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>View Piece</span>
-                      </div>
+                    {/* Quick Add overlay button on hover (desktop) */}
+                    <div className="absolute inset-x-2.5 bottom-2.5 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 hidden sm:block">
+                      <button
+                        onClick={(e) => handleQuickAdd(e, product)}
+                        className="w-full py-2 bg-[#B65A37] hover:bg-[#A7472B] text-white rounded-xl text-xs font-sans font-medium tracking-wider uppercase flex items-center justify-center gap-1.5 shadow-md transition-colors"
+                      >
+                        <ShoppingBag className="w-3.5 h-3.5" />
+                        <span>Add to Bag</span>
+                      </button>
                     </div>
                   </div>
 
-                  {/* Product Details info */}
-                  <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between">
+                  {/* Product Details */}
+                  <div className="pt-2.5 px-0.5 flex flex-col flex-1 justify-between">
                     <div>
-                      <p className="text-[10px] tracking-wider uppercase text-neutral-400 font-medium mb-1 line-clamp-1">
-                        Pooja Lace HUB • {(product.category || product.categorySlug || 'Collection').toString().replace(/-/g, ' ')}
-                      </p>
-                      
-                      {/* Title - Links to dedicated product page */}
-                      <h3 
-                        onClick={() => handleOpenProductPage(product)}
-                        className="font-serif text-sm sm:text-base font-medium text-[#221E1B] leading-snug cursor-pointer group-hover:text-brand-700 transition-colors line-clamp-2"
-                      >
+                      <span className="text-[10px] font-sans text-[#8C6F5A] tracking-wider uppercase block">
+                        {product.category || 'House of Taaga'}
+                      </span>
+                      <h3 className="font-serif text-sm sm:text-base font-medium text-[#382017] group-hover:text-[#B65A37] transition-colors line-clamp-1 leading-snug mt-0.5">
                         {product.title}
                       </h3>
-
-                      {product.subtitle && (
-                        <p className="text-[11px] text-neutral-500 font-serif italic mt-0.5 line-clamp-1">
-                          {product.subtitle}
-                        </p>
-                      )}
                     </div>
 
-                    {/* Pricing & Add to Cart button */}
-                    <div className="mt-3 pt-2.5 border-t border-[#F5EFE8] flex items-center justify-between">
-                      <div>
-                        <div className="flex items-baseline gap-1.5">
-                          <span className="font-serif font-semibold text-sm sm:text-base text-[#1E1A17]">
-                            ₹{product.price.toLocaleString('en-IN')}
+                    {/* Pricing in INR */}
+                    <div className="mt-1 flex items-baseline gap-2">
+                      <span className="font-sans font-semibold text-sm sm:text-base text-[#A7472B]">
+                        ₹{product.price.toLocaleString('en-IN')}
+                      </span>
+                      {hasDiscount && (
+                        <>
+                          <span className="font-sans text-xs text-neutral-400 line-through">
+                            ₹{product.originalPrice.toLocaleString('en-IN')}
                           </span>
-                          {product.originalPrice > product.price && (
-                            <span className="text-[11px] text-neutral-400 line-through font-light">
-                              ₹{product.originalPrice.toLocaleString('en-IN')}
-                            </span>
-                          )}
-                        </div>
-                        {discount && (
-                          <span className="text-[10px] text-emerald-700 font-medium">
-                            {discount}% off
+                          <span className="text-[10px] font-sans font-bold text-[#D85179]">
+                            {discountPercent}% OFF
                           </span>
-                        )}
-                      </div>
-
-                      {/* Add Button or Sold Out indicator */}
-                      {product.stock !== undefined && product.stock <= 0 ? (
-                        <span className="px-3 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-full text-[10px] font-semibold uppercase tracking-wider">
-                          Sold Out
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            addToCart(product, 1);
-                            setIsCartOpen(true);
-                          }}
-                          className="p-2 sm:px-4 sm:py-1.5 bg-[#18060B] hover:bg-[#7A112A] text-white rounded-full text-[11px] font-semibold tracking-wider uppercase flex items-center gap-1.5 transition-all active:scale-95 shadow-xs cursor-pointer"
-                          aria-label={`Add ${product.title} to bag`}
-                        >
-                          <ShoppingBag className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline">Add</span>
-                        </button>
+                        </>
                       )}
                     </div>
-
                   </div>
-                </div>
+                </article>
               );
             })}
           </div>

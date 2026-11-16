@@ -10,6 +10,7 @@ import { AdminPanel } from './components/AdminPanel';
 import { BottomNavigation } from './components/BottomNavigation';
 import { CartDrawer } from './components/CartDrawer';
 import { ContactModal } from './components/ContactModal';
+import { AboutModal } from './components/AboutModal';
 import { Sparkles } from 'lucide-react';
 
 const Layout = () => {
@@ -20,19 +21,19 @@ const Layout = () => {
   } = useStore();
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] flex flex-col justify-between text-[#241A1C] selection:bg-[#FDF5F6] selection:text-[#7A112A] pb-16 sm:pb-0">
+    <div className="min-h-screen bg-[#FAF2E9] flex flex-col justify-between text-[#382017] selection:bg-[#B65A37]/20 selection:text-[#382017] pb-16 sm:pb-0">
       
       {/* Toast Notification */}
       {toast && (
-        <div className="fixed top-16 right-4 z-50 animate-bounce">
-          <div className="bg-[#18060B] text-white text-xs px-4 py-2.5 rounded-full shadow-xl flex items-center gap-2 border border-[#7A112A]/40">
-            <Sparkles className="w-4 h-4 text-[#D4AF37]" />
+        <div className="fixed top-20 right-4 z-50 animate-bounce">
+          <div className="bg-[#382017] text-[#FFF9F2] text-xs px-4 py-2.5 rounded-full shadow-xl flex items-center gap-2 border border-[#B65A37]/40">
+            <Sparkles className="w-4 h-4 text-[#C69B52]" />
             <span>{toast.message}</span>
           </div>
         </div>
       )}
 
-      {/* Global Header */}
+      {/* Global Header (Section 1 Announcement Bar + Section 2 Mobile Header) */}
       <Header />
 
       {/* Dynamic Route Content */}
@@ -48,13 +49,14 @@ const Layout = () => {
         </Routes>
       </main>
 
-      {/* Mobile Sticky Bottom Navigation (4 tabs: Home, Cart, Contact, Order) */}
+      {/* Mobile Sticky Bottom Navigation (4 tabs: Home, Bag, Contact, Order) */}
       <BottomNavigation />
 
       {/* Modals & Slide Drawers */}
       {isAdminOpen && <AdminPanel onClose={() => setIsAdminOpen(false)} />}
       <CartDrawer />
       <ContactModal />
+      <AboutModal />
 
     </div>
   );

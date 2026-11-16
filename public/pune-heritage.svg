@@ -1,0 +1,253 @@
+
+<svg width="1200" height="520" viewBox="0 0 1200 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="600" y1="0" x2="600" y2="520" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF9F2"/>
+      <stop offset="50%" stop-color="#FAF2E9"/>
+      <stop offset="100%" stop-color="#F5E8DA"/>
+    </linearGradient>
+    <linearGradient id="terracottaFade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#B65A37" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#A7472B" stop-opacity="1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="1200" height="520" fill="url(#bgGrad)"/>
+
+  <!-- Distant Rolling Hills of Pune (Sinhagad / Vetal Tekdi range) -->
+  <path d="M0 240 Q150 180 320 220 Q480 250 600 200 Q720 160 890 215 Q1060 255 1200 210 V420 H0 Z" fill="#F4E3D2" opacity="0.45"/>
+  <path d="M0 260 Q180 220 380 245 Q560 270 700 230 Q840 195 1020 240 Q1120 260 1200 235 V420 H0 Z" fill="#EED5C0" opacity="0.5"/>
+
+  <!-- Distant Birds in Sky -->
+  <path d="M280 120 Q290 112 300 120 Q310 112 320 120" stroke="#B65A37" stroke-width="1.6" stroke-linecap="round" fill="none" opacity="0.6"/>
+  <path d="M330 135 Q338 128 346 135 Q354 128 362 135" stroke="#B65A37" stroke-width="1.4" stroke-linecap="round" fill="none" opacity="0.5"/>
+  <path d="M880 110 Q890 102 900 110 Q910 102 920 110" stroke="#B65A37" stroke-width="1.6" stroke-linecap="round" fill="none" opacity="0.6"/>
+
+  <!-- Shaniwar Wada Bastions & Fortification Wall -->
+  <!-- Left Bastion (Round Stone Tower) -->
+  <path d="M320 380 V220 C320 200 370 195 440 200 C470 202 490 210 500 220 V380" fill="#FAF2E9" stroke="#B65A37" stroke-width="2.2" stroke-linejoin="round"/>
+  <!-- Right Bastion (Round Stone Tower) -->
+  <path d="M700 220 C710 210 730 202 760 200 C830 195 880 200 880 220 V380" fill="#FAF2E9" stroke="#B65A37" stroke-width="2.2" stroke-linejoin="round"/>
+
+  <!-- Bastion Battlements / Kangooras (Decorative parapet crests) -->
+  <!-- Left Bastion Crenellations -->
+  <path d="M320 220 L320 205 L332 205 L332 220 L345 220 L345 205 L357 205 L357 220 L370 220 L370 205 L382 205 L382 220 L395 220 L395 205 L407 205 L407 220 L420 220 L420 205 L432 205 L432 220 L445 220 L445 205 L457 205 L457 220 L470 220 L470 205 L482 205 L482 220 L495 220 L495 205 L500 205 L500 220" stroke="#B65A37" stroke-width="2" fill="#F7E9DC"/>
+  <!-- Right Bastion Crenellations -->
+  <path d="M700 220 L700 205 L705 205 L705 220 L718 220 L718 205 L730 205 L730 220 L743 220 L743 205 L755 205 L755 220 L768 220 L768 205 L780 205 L780 220 L793 220 L793 205 L805 205 L805 220 L818 220 L818 205 L830 205 L830 220 L843 220 L843 205 L855 205 L855 220 L868 220 L868 205 L880 205 L880 220" stroke="#B65A37" stroke-width="2" fill="#F7E9DC"/>
+
+  <!-- Stone masonry coursing lines on Bastions (hand-drawn ashlar stone feel) -->
+  <!-- Left Bastion Course Lines -->
+  <line x1="324" y1="240" x2="496" y2="240" stroke="#B65A37" stroke-width="1" stroke-dasharray="8 6" opacity="0.6"/>
+  <line x1="322" y1="260" x2="498" y2="260" stroke="#B65A37" stroke-width="1" stroke-dasharray="12 8" opacity="0.6"/>
+  <line x1="321" y1="280" x2="499" y2="280" stroke="#B65A37" stroke-width="1" stroke-dasharray="10 6" opacity="0.6"/>
+  <line x1="320" y1="300" x2="500" y2="300" stroke="#B65A37" stroke-width="1" stroke-dasharray="14 7" opacity="0.6"/>
+  <line x1="320" y1="320" x2="500" y2="320" stroke="#B65A37" stroke-width="1" stroke-dasharray="9 5" opacity="0.6"/>
+  <line x1="320" y1="340" x2="500" y2="340" stroke="#B65A37" stroke-width="1" stroke-dasharray="11 6" opacity="0.6"/>
+  <line x1="320" y1="360" x2="500" y2="360" stroke="#B65A37" stroke-width="1" stroke-dasharray="15 8" opacity="0.6"/>
+
+  <!-- Right Bastion Course Lines -->
+  <line x1="704" y1="240" x2="876" y2="240" stroke="#B65A37" stroke-width="1" stroke-dasharray="8 6" opacity="0.6"/>
+  <line x1="702" y1="260" x2="878" y2="260" stroke="#B65A37" stroke-width="1" stroke-dasharray="12 8" opacity="0.6"/>
+  <line x1="701" y1="280" x2="879" y2="280" stroke="#B65A37" stroke-width="1" stroke-dasharray="10 6" opacity="0.6"/>
+  <line x1="700" y1="300" x2="880" y2="300" stroke="#B65A37" stroke-width="1" stroke-dasharray="14 7" opacity="0.6"/>
+  <line x1="700" y1="320" x2="880" y2="320" stroke="#B65A37" stroke-width="1" stroke-dasharray="9 5" opacity="0.6"/>
+  <line x1="700" y1="340" x2="880" y2="340" stroke="#B65A37" stroke-width="1" stroke-dasharray="11 6" opacity="0.6"/>
+  <line x1="700" y1="360" x2="880" y2="360" stroke="#B65A37" stroke-width="1" stroke-dasharray="15 8" opacity="0.6"/>
+
+  <!-- Gun slits / Teer-kaman slots on bastions -->
+  <rect x="360" y="270" width="8" height="24" rx="4" fill="#B65A37" opacity="0.75"/>
+  <rect x="420" y="265" width="8" height="24" rx="4" fill="#B65A37" opacity="0.75"/>
+  <rect x="460" y="275" width="8" height="24" rx="4" fill="#B65A37" opacity="0.75"/>
+  <rect x="735" y="275" width="8" height="24" rx="4" fill="#B65A37" opacity="0.75"/>
+  <rect x="775" y="265" width="8" height="24" rx="4" fill="#B65A37" opacity="0.75"/>
+  <rect x="835" y="270" width="8" height="24" rx="4" fill="#B65A37" opacity="0.75"/>
+
+  <!-- Outer curtain wall wings -->
+  <path d="M120 380 L120 250 L320 250 L320 380" stroke="#B65A37" stroke-width="2" fill="#FAF2E9"/>
+  <path d="M880 380 L880 250 L1080 250 L1080 380" stroke="#B65A37" stroke-width="2" fill="#FAF2E9"/>
+  <line x1="120" y1="270" x2="320" y2="270" stroke="#B65A37" stroke-width="1" stroke-dasharray="8 6" opacity="0.5"/>
+  <line x1="120" y1="300" x2="320" y2="300" stroke="#B65A37" stroke-width="1" stroke-dasharray="12 8" opacity="0.5"/>
+  <line x1="120" y1="335" x2="320" y2="335" stroke="#B65A37" stroke-width="1" stroke-dasharray="10 6" opacity="0.5"/>
+  <line x1="880" y1="270" x2="1080" y2="270" stroke="#B65A37" stroke-width="1" stroke-dasharray="8 6" opacity="0.5"/>
+  <line x1="880" y1="300" x2="1080" y2="300" stroke="#B65A37" stroke-width="1" stroke-dasharray="12 8" opacity="0.5"/>
+  <line x1="880" y1="335" x2="1080" y2="335" stroke="#B65A37" stroke-width="1" stroke-dasharray="10 6" opacity="0.5"/>
+
+  <!-- CENTRAL GATEWAY: DILLI DARWAZA -->
+  <!-- Recessed Arch Wall -->
+  <rect x="500" y="210" width="200" height="170" fill="#F8EDE1" stroke="#B65A37" stroke-width="2.2"/>
+  
+  <!-- Massive Grand Pointed Arch Portal -->
+  <path d="M535 380 V285 C535 245 565 230 600 215 C635 230 665 245 665 285 V380 Z" fill="#2E1710" stroke="#B65A37" stroke-width="2.5"/>
+  
+  <!-- Outer Arch Molding (Cusped Arch Outline) -->
+  <path d="M525 380 V280 C525 235 560 218 600 202 C640 218 675 235 675 280 V380" stroke="#B65A37" stroke-width="1.8" fill="none"/>
+  <path d="M545 380 V290 C545 255 570 240 600 228 C630 240 655 255 655 290 V380" stroke="#C69B52" stroke-width="1.2" fill="none"/>
+
+  <!-- Heavy Wooden Teak Gate with Iron Spikes (Defensive Spikes against war elephants) -->
+  <line x1="600" y1="228" x2="600" y2="380" stroke="#B65A37" stroke-width="2"/>
+  <!-- Left Door Spikes -->
+  <circle cx="560" cy="280" r="2.5" fill="#C69B52"/>
+  <circle cx="580" cy="280" r="2.5" fill="#C69B52"/>
+  <circle cx="560" cy="310" r="2.5" fill="#C69B52"/>
+  <circle cx="580" cy="310" r="2.5" fill="#C69B52"/>
+  <circle cx="560" cy="340" r="2.5" fill="#C69B52"/>
+  <circle cx="580" cy="340" r="2.5" fill="#C69B52"/>
+  <circle cx="560" cy="365" r="2.5" fill="#C69B52"/>
+  <circle cx="580" cy="365" r="2.5" fill="#C69B52"/>
+  <!-- Right Door Spikes -->
+  <circle cx="620" cy="280" r="2.5" fill="#C69B52"/>
+  <circle cx="640" cy="280" r="2.5" fill="#C69B52"/>
+  <circle cx="620" cy="310" r="2.5" fill="#C69B52"/>
+  <circle cx="640" cy="310" r="2.5" fill="#C69B52"/>
+  <circle cx="620" cy="340" r="2.5" fill="#C69B52"/>
+  <circle cx="640" cy="340" r="2.5" fill="#C69B52"/>
+  <circle cx="620" cy="365" r="2.5" fill="#C69B52"/>
+  <circle cx="640" cy="365" r="2.5" fill="#C69B52"/>
+
+  <!-- Upper Maratha Wooden Pavilion: NAGARKHANA / JHAROKHA -->
+  <!-- Base Balcony Cornice -->
+  <path d="M490 210 L710 210 L705 198 L495 198 Z" fill="#EAD5C2" stroke="#B65A37" stroke-width="1.8"/>
+  <line x1="490" y1="204" x2="710" y2="204" stroke="#B65A37" stroke-width="1.2"/>
+
+  <!-- Carved Wooden Pillars (Suru / Cypress columns) -->
+  <line x1="510" y1="198" x2="510" y2="148" stroke="#B65A37" stroke-width="2.5"/>
+  <line x1="535" y1="198" x2="535" y2="148" stroke="#B65A37" stroke-width="2"/>
+  <line x1="565" y1="198" x2="565" y2="148" stroke="#B65A37" stroke-width="2"/>
+  <line x1="600" y1="198" x2="600" y2="148" stroke="#B65A37" stroke-width="2.5"/>
+  <line x1="635" y1="198" x2="635" y2="148" stroke="#B65A37" stroke-width="2"/>
+  <line x1="665" y1="198" x2="665" y2="148" stroke="#B65A37" stroke-width="2"/>
+  <line x1="690" y1="198" x2="690" y2="148" stroke="#B65A37" stroke-width="2.5"/>
+
+  <!-- Arched Balustrades & Cusped Openings -->
+  <path d="M510 160 Q522 152 535 160" stroke="#B65A37" stroke-width="1.5" fill="none"/>
+  <path d="M535 160 Q550 152 565 160" stroke="#B65A37" stroke-width="1.5" fill="none"/>
+  <path d="M565 160 Q582 152 600 160" stroke="#B65A37" stroke-width="1.5" fill="none"/>
+  <path d="M600 160 Q618 152 635 160" stroke="#B65A37" stroke-width="1.5" fill="none"/>
+  <path d="M635 160 Q650 152 665 160" stroke="#B65A37" stroke-width="1.5" fill="none"/>
+  <path d="M665 160 Q678 152 690 160" stroke="#B65A37" stroke-width="1.5" fill="none"/>
+
+  <!-- Balustrade lower lattice (Jali) -->
+  <rect x="510" y="180" width="180" height="18" fill="#F4E4D3" stroke="#B65A37" stroke-width="1"/>
+  <path d="M510 180 L690 198 M510 198 L690 180" stroke="#B65A37" stroke-width="0.8" opacity="0.4"/>
+
+  <!-- Nagarkhana Sloping Chhajja / Eaves (Traditional Peshwa architectural roof) -->
+  <path d="M475 148 L725 148 L715 138 L485 138 Z" fill="#B65A37" stroke="#A7472B" stroke-width="1.8"/>
+  <path d="M495 138 L705 138 L680 115 L520 115 Z" fill="#F7ECE1" stroke="#B65A37" stroke-width="1.8"/>
+
+  <!-- Roof Ridge & Decorative Kalash Finials -->
+  <line x1="518" y1="115" x2="682" y2="115" stroke="#B65A37" stroke-width="2.5"/>
+  <path d="M600 115 V98 M597 106 H603 M598 98 C598 94 602 94 602 98 Z" stroke="#C69B52" stroke-width="2" fill="#F5E096"/>
+  <path d="M540 115 V102 M538 108 H542 M539 102 C539 99 541 99 541 102 Z" stroke="#C69B52" stroke-width="1.5" fill="#F5E096"/>
+  <path d="M660 115 V102 M658 108 H662 M659 102 C659 99 661 99 661 102 Z" stroke="#C69B52" stroke-width="1.5" fill="#F5E096"/>
+
+  <!-- Gentle Trees & Foliage framing the fort walls -->
+  <!-- Left Side Tree (Banyan/Peepal branches) -->
+  <path d="M120 380 Q100 320 80 270 Q130 220 160 270 Q180 210 220 250 Q260 210 290 260" stroke="#7E8A67" stroke-width="2" fill="none" opacity="0.75"/>
+  <circle cx="110" cy="265" r="14" fill="#889870" opacity="0.35"/>
+  <circle cx="150" cy="245" r="18" fill="#889870" opacity="0.4"/>
+  <circle cx="190" cy="230" r="16" fill="#889870" opacity="0.35"/>
+  <circle cx="230" cy="240" r="15" fill="#889870" opacity="0.4"/>
+  <circle cx="270" cy="250" r="13" fill="#889870" opacity="0.35"/>
+
+  <!-- Right Side Tree -->
+  <path d="M1080 380 Q1100 320 1120 270 Q1070 220 1040 270 Q1020 210 980 250 Q940 210 910 260" stroke="#7E8A67" stroke-width="2" fill="none" opacity="0.75"/>
+  <circle cx="1090" cy="265" r="14" fill="#889870" opacity="0.35"/>
+  <circle cx="1050" cy="245" r="18" fill="#889870" opacity="0.4"/>
+  <circle cx="1010" cy="230" r="16" fill="#889870" opacity="0.35"/>
+  <circle cx="970" cy="240" r="15" fill="#889870" opacity="0.4"/>
+  <circle cx="930" cy="250" r="13" fill="#889870" opacity="0.35"/>
+
+  <!-- Ground Stone Pathway & Foreground Lawn -->
+  <line x1="0" y1="380" x2="1200" y2="380" stroke="#B65A37" stroke-width="2.5"/>
+  <rect x="0" y="381" width="1200" height="139" fill="#F7ECE1"/>
+  <line x1="0" y1="388" x2="1200" y2="388" stroke="#E2CCA8" stroke-width="1.2" stroke-dasharray="16 8"/>
+
+  <!-- BOTTOM CORNER BOUGAINVILLEA FLORAL COMPOSITIONS -->
+  <!-- Bottom Left Corner Flowers & Vine -->
+  <g transform="translate(40, 390)">
+    <!-- Branch stems -->
+    <path d="M0 110 Q50 90 90 50 Q130 15 180 5" stroke="#7D5E43" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    <path d="M40 95 Q60 60 95 65" stroke="#7D5E43" stroke-width="1.6" fill="none"/>
+    <path d="M90 50 Q120 40 140 25" stroke="#7D5E43" stroke-width="1.6" fill="none"/>
+
+    <!-- Green leaves -->
+    <path d="M50 85 C45 75 60 70 70 80 C65 90 55 92 50 85 Z" fill="#6A8057"/>
+    <path d="M85 55 C80 45 95 40 105 50 C100 60 90 62 85 55 Z" fill="#7E9666"/>
+    <path d="M125 35 C120 25 135 20 145 30 C140 40 130 42 125 35 Z" fill="#6A8057"/>
+    <path d="M160 15 C155 5 170 0 180 10 C175 20 165 22 160 15 Z" fill="#7E9666"/>
+
+    <!-- Bougainvillea Pink Blossoms (#D85179) -->
+    <!-- Flower Cluster 1 -->
+    <g transform="translate(70, 75)">
+      <path d="M0 0 C-10 -15 10 -20 12 -5 C14 10 -5 12 0 0 Z" fill="#D85179"/>
+      <path d="M5 -2 C18 -10 24 8 10 14 C-2 18 -4 4 5 -2 Z" fill="#C93F67"/>
+      <path d="M-2 5 C-16 12 -6 26 8 20 C14 12 4 0 -2 5 Z" fill="#E86C90"/>
+      <circle cx="5" cy="5" r="2.5" fill="#FFF8E7"/>
+    </g>
+    <!-- Flower Cluster 2 -->
+    <g transform="translate(130, 35)">
+      <path d="M0 0 C-10 -15 10 -20 12 -5 C14 10 -5 12 0 0 Z" fill="#D85179"/>
+      <path d="M5 -2 C18 -10 24 8 10 14 C-2 18 -4 4 5 -2 Z" fill="#E86C90"/>
+      <path d="M-2 5 C-16 12 -6 26 8 20 C14 12 4 0 -2 5 Z" fill="#C93F67"/>
+      <circle cx="5" cy="5" r="2.5" fill="#FFF8E7"/>
+    </g>
+    <!-- Flower Cluster 3 (Tip) -->
+    <g transform="translate(175, 10)">
+      <path d="M0 0 C-8 -12 8 -16 10 -4 C11 8 -4 9 0 0 Z" fill="#D85179"/>
+      <path d="M4 -2 C14 -8 19 6 8 11 C-1 14 -3 3 4 -2 Z" fill="#C93F67"/>
+      <circle cx="4" cy="3" r="2" fill="#FFF8E7"/>
+    </g>
+  </g>
+
+  <!-- Bottom Right Corner Flowers & Vine (Mirrored) -->
+  <g transform="translate(1160, 390) scale(-1, 1)">
+    <!-- Branch stems -->
+    <path d="M0 110 Q50 90 90 50 Q130 15 180 5" stroke="#7D5E43" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    <path d="M40 95 Q60 60 95 65" stroke="#7D5E43" stroke-width="1.6" fill="none"/>
+    <path d="M90 50 Q120 40 140 25" stroke="#7D5E43" stroke-width="1.6" fill="none"/>
+
+    <!-- Green leaves -->
+    <path d="M50 85 C45 75 60 70 70 80 C65 90 55 92 50 85 Z" fill="#6A8057"/>
+    <path d="M85 55 C80 45 95 40 105 50 C100 60 90 62 85 55 Z" fill="#7E9666"/>
+    <path d="M125 35 C120 25 135 20 145 30 C140 40 130 42 125 35 Z" fill="#6A8057"/>
+    <path d="M160 15 C155 5 170 0 180 10 C175 20 165 22 160 15 Z" fill="#7E9666"/>
+
+    <!-- Bougainvillea Pink Blossoms -->
+    <g transform="translate(70, 75)">
+      <path d="M0 0 C-10 -15 10 -20 12 -5 C14 10 -5 12 0 0 Z" fill="#D85179"/>
+      <path d="M5 -2 C18 -10 24 8 10 14 C-2 18 -4 4 5 -2 Z" fill="#C93F67"/>
+      <path d="M-2 5 C-16 12 -6 26 8 20 C14 12 4 0 -2 5 Z" fill="#E86C90"/>
+      <circle cx="5" cy="5" r="2.5" fill="#FFF8E7"/>
+    </g>
+    <g transform="translate(130, 35)">
+      <path d="M0 0 C-10 -15 10 -20 12 -5 C14 10 -5 12 0 0 Z" fill="#D85179"/>
+      <path d="M5 -2 C18 -10 24 8 10 14 C-2 18 -4 4 5 -2 Z" fill="#E86C90"/>
+      <path d="M-2 5 C-16 12 -6 26 8 20 C14 12 4 0 -2 5 Z" fill="#C93F67"/>
+      <circle cx="5" cy="5" r="2.5" fill="#FFF8E7"/>
+    </g>
+    <g transform="translate(175, 10)">
+      <path d="M0 0 C-8 -12 8 -16 10 -4 C11 8 -4 9 0 0 Z" fill="#D85179"/>
+      <path d="M4 -2 C14 -8 19 6 8 11 C-1 14 -3 3 4 -2 Z" fill="#C93F67"/>
+      <circle cx="4" cy="3" r="2" fill="#FFF8E7"/>
+    </g>
+  </g>
+
+  <!-- CENTERED TEXT: "Proudly rooted in Pune ♡" -->
+  <g transform="translate(600, 455)">
+    <!-- Ornamental flourishing line -->
+    <line x1="-160" y1="-26" x2="-20" y2="-26" stroke="#C69B52" stroke-width="1.2"/>
+    <circle cx="0" cy="-26" r="3.5" fill="#C69B52"/>
+    <line x1="20" y1="-26" x2="160" y2="-26" stroke="#C69B52" stroke-width="1.2"/>
+
+    <!-- Text -->
+    <text text-anchor="middle" y="5" font-family="Cormorant Garamond, Playfair Display, serif" font-size="28" font-style="italic" font-weight="600" fill="#A7472B" letter-spacing="3">
+      Proudly rooted in Pune ♡
+    </text>
+
+    <!-- Subtitle caption -->
+    <text text-anchor="middle" y="28" font-family="DM Sans, Plus Jakarta Sans, sans-serif" font-size="11" font-weight="500" fill="#8C6F5A" letter-spacing="4">
+      SHANIWAR WADA • HERITAGE • PUNE, MAHARASHTRA
+    </text>
+  </g>
+</svg>

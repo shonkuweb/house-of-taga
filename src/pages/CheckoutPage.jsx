@@ -202,7 +202,7 @@ export const CheckoutPage = () => {
                   Thank You for Your Order!
                 </h1>
                 <p className="text-xs sm:text-sm text-neutral-600 max-w-md mx-auto mt-1 font-light">
-                  Your order has been recorded in the <strong>Pooja Lace HUB</strong> system. Our Surat studio is preparing your pieces.
+                  Your order has been recorded in the <strong>House of Taaga</strong> system. Our studio is preparing your pieces.
                 </p>
               </div>
             </div>
@@ -339,16 +339,16 @@ export const CheckoutPage = () => {
             <div className="mt-6 pt-5 border-t border-[#EAE0D4] flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
               <div>
                 <p className="text-xs font-semibold text-[#25201C]">
-                  Pooja Lace HUB Surat Studio
+                  House of Taaga Studio
                 </p>
                 <p className="text-[11px] text-neutral-500">
-                  U-2A, Regent Arcade, Ghod Dod Road, Surat • Call / WhatsApp: <strong>{boutiquePhone}</strong>
+                  Rooted in love. Worn with grace. • Call / WhatsApp: <strong>{boutiquePhone}</strong>
                 </p>
               </div>
 
               <a
                 href={`https://wa.me/${waTarget}?text=${encodeURIComponent(
-                  `Hello Pooja Lace HUB Surat! I just placed order #${completedOrder.id} and would love to confirm details.`
+                  `Hello House of Taaga! I just placed order #${completedOrder.id} and would love to confirm details.`
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -421,7 +421,7 @@ export const CheckoutPage = () => {
           <div>
             <div className="flex items-center gap-1.5 text-[10px] tracking-[0.2em] uppercase font-semibold text-[#866D5B] mb-1">
               <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
-              <span>Pooja Lace HUB • Surat</span>
+              <span>House of Taaga</span>
             </div>
             <h1 className="font-serif text-2xl sm:text-3xl text-[#1E1A17] font-normal tracking-tight">
               Order & Payment Checkout
@@ -672,7 +672,7 @@ export const CheckoutPage = () => {
                         />
                         <button
                           type="button"
-                          onClick={() => setUpiIdInput('poojalacehub.customer@upi')}
+                          onClick={() => setUpiIdInput('houseoftaaga.customer@upi')}
                           className="px-3 py-2 bg-white border border-[#D8C7B5] hover:bg-[#F2EAE0] text-[11px] font-medium text-neutral-700 rounded-xl transition-colors cursor-pointer"
                         >
                           Auto-fill
@@ -800,9 +800,9 @@ export const CheckoutPage = () => {
               <div className="bg-[#FAF4EC] rounded-xl border border-[#E8D9C8] p-4 flex items-center gap-3 text-xs text-[#6A5342]">
                 <ShieldCheck className="w-5 h-5 text-[#7A112A] shrink-0" />
                 <div>
-                  <span className="font-semibold block">Pooja Lace HUB Guarantee</span>
+                  <span className="font-semibold block">House of Taaga Guarantee</span>
                   <span className="text-[11px] text-neutral-500">
-                    Handcrafted inspection in Surat studio • Pan-India Express Delivery • 100% genuine laces, latkans & handwork.
+                    Artisanal craftsmanship • Pan-India Delivery • Thoughtful details & premium quality.
                   </span>
                 </div>
               </div>

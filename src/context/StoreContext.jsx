@@ -19,9 +19,11 @@ export const StoreProvider = ({ children }) => {
       const saved = localStorage.getItem('kundan_categories');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          const legacyDummyIds = ['cat_ethnic', 'cat_western', 'cat_kurtas', 'cat_tops', 'cat_sarees', 'cat_bottoms'];
-          return parsed.filter(c => c && !legacyDummyIds.includes(c.id));
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const hasTaagaCategories = parsed.some(c => c && (c.slug === 'kurtas' || c.slug === 'festive-edit'));
+          if (hasTaagaCategories) {
+            return parsed;
+          }
         }
       }
       return INITIAL_CATEGORIES;
@@ -35,23 +37,11 @@ export const StoreProvider = ({ children }) => {
       const saved = localStorage.getItem('kundan_products');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          const legacyDummyIds = ['prod_1', 'prod_2', 'prod_3', 'prod_4', 'prod_5', 'prod_6'];
-          return parsed
-            .filter(p => p && !legacyDummyIds.includes(p.id))
-            .map(p => ({
-              ...p,
-              title: p.title || p.name || 'Untitled Piece',
-              name: p.name || p.title || 'Untitled Piece',
-              category: p.category || 'Collection',
-              categorySlug: p.categorySlug || p.categoryId || (p.category ? String(p.category).toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'general'),
-              price: Number(p.price) || 0,
-              originalPrice: Number(p.originalPrice || p.price || 0),
-              stock: p.stock !== undefined ? Number(p.stock) : 10,
-              inStock: p.stock !== undefined ? Number(p.stock) > 0 : true,
-              images: Array.isArray(p.images) ? p.images : (p.imageUrl ? [p.imageUrl] : []),
-              imageUrl: (Array.isArray(p.images) && p.images[0]) || p.imageUrl || ''
-            }));
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const hasTaagaProducts = parsed.some(p => p && (p.id?.startsWith('taaga_') || p.categorySlug === 'kurtas' || p.categorySlug === 'festive-edit'));
+          if (hasTaagaProducts) {
+            return parsed;
+          }
         }
       }
       return INITIAL_PRODUCTS;
@@ -98,26 +88,30 @@ export const StoreProvider = ({ children }) => {
           parsed.storeName === 'KUNDAN WORKS' ||
           parsed.storeName === 'Kundan Work Creation' ||
           parsed.storeName === 'Kundan Works' ||
-          parsed.storeName === 'RADHA SANG'
+          parsed.storeName === 'RADHA SANG' ||
+          parsed.storeName.includes('POOJA') ||
+          parsed.storeName.includes('Pooja')
         ) {
-          parsed.storeName = 'POOJA LACE HUB SURAT';
+          parsed.storeName = 'HOUSE OF TAAGA';
+          parsed.shortName = 'House of Taaga';
         }
         if (
           !parsed.tagline ||
           parsed.tagline === 'WEAR YOUR STORY' ||
           parsed.tagline === 'Artisanal Ethnic & Western Wear' ||
-          parsed.tagline === 'GIRLISH & LADIES FASHION HUB'
+          parsed.tagline === 'GIRLISH & LADIES FASHION HUB' ||
+          parsed.tagline.includes('BANJARA')
         ) {
-          parsed.tagline = 'BANJARA • GOTA • HANDWORK • SURAT';
+          parsed.tagline = 'Rooted in love. Worn with grace.';
         }
-        if (!parsed.subHeading || parsed.subHeading === 'Tradition Meets Everyday Style' || parsed.subHeading === 'Kurti | Cord Set | Tops') {
-          parsed.subHeading = 'Unique Lace ✨ | Latkan ✨ | Brooches ✨ | Pillow Cover';
+        if (!parsed.subHeading || parsed.subHeading.includes('Unique Lace') || parsed.subHeading === 'Tradition Meets Everyday Style' || parsed.subHeading === 'Kurti | Cord Set | Tops') {
+          parsed.subHeading = 'A mother-daughter label born from shared love for Indian wear';
         }
-        parsed.location = 'U-2A, Regent Arcade (Mall), Ghod Dod Road, Surat-395007';
-        parsed.instagram = 'pooja_lace_hub_surat';
-        parsed.owner = 'Prem Singh Chouhan (@premsingh_chouhan_09)';
-        parsed.facebook = 'Pooja Lace Hub';
-        parsed.westernWear = 'pooja_western_wear';
+        parsed.shortName = 'House of Taaga';
+        parsed.location = 'House of Taaga Studio';
+        parsed.instagram = 'house_of_taaga';
+        parsed.facebook = 'House of Taaga';
+        parsed.westernWear = 'house_of_taaga';
         return parsed;
       }
       return INITIAL_CONFIG;
@@ -133,7 +127,32 @@ export const StoreProvider = ({ children }) => {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isContactOpen, setIsContactOpen] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+
+  // Wishlist state
+  const [wishlist, setWishlist] = useState(() => {
+    try {
+      const saved = localStorage.getItem('taaga_wishlist');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const toggleWishlist = (productId) => {
+    setWishlist(prev => {
+      const exists = prev.includes(productId);
+      const next = exists ? prev.filter(id => id !== productId) : [...prev, productId];
+      try {
+        localStorage.setItem('taaga_wishlist', JSON.stringify(next));
+      } catch (e) {}
+      showToast(exists ? 'Removed from wishlist' : 'Saved to your wishlist ♡');
+      return next;
+    });
+  };
+
+  const isWishlisted = (productId) => wishlist.includes(productId);
   
   // Cart state with safe normalization
   const [cart, setCart] = useState(() => {
@@ -999,6 +1018,11 @@ export const StoreProvider = ({ children }) => {
         setIsCartOpen,
         isContactOpen,
         setIsContactOpen,
+        isAboutOpen,
+        setIsAboutOpen,
+        wishlist,
+        toggleWishlist,
+        isWishlisted,
         selectedProduct,
         setSelectedProduct,
         cart,
