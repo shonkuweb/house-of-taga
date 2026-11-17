@@ -35,7 +35,17 @@ import {
   Sparkles,
   ExternalLink,
   Menu,
-  ChevronRight
+  ChevronRight,
+  ArrowUpRight,
+  Percent,
+  Truck,
+  Upload,
+  ArrowLeft,
+  FolderTree,
+  Smartphone,
+  Monitor,
+  Tag,
+  Gift
 } from 'lucide-react';
 import { useStore, ORDER_STAGES } from '../context/StoreContext';
 import { FashionPlaceholder } from './Placeholders';
@@ -160,15 +170,49 @@ export const AdminPanel = ({ onClose }) => {
     images: []
   });
 
-  // Category Form State
+  // Category Form State (Supporting Parent & Subcategory hierarchy)
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [categoryForm, setCategoryForm] = useState({
     name: '',
     slug: '',
+    parentId: '', // empty string for None (Top-level Category)
     subtitle: '',
     imageUrl: ''
   });
+  const [categoryFilter, setCategoryFilter] = useState('all'); // 'all' | 'parent' | 'sub'
+  const categoryFileInputRef = useRef(null);
+
+  // Store Settings Modal State
+  // null | 'offers' | 'hero' | 'shipping' | 'password'
+  const [activeSettingModal, setActiveSettingModal] = useState(null);
+
+  const [shippingSettings, setShippingSettings] = useState(() => ({
+    standardCharge: storeConfig?.shipping?.standardCharge ?? 40,
+    freeDeliveryMin: storeConfig?.shipping?.freeDeliveryMin ?? 3999
+  }));
+
+  const [offersSettings, setOffersSettings] = useState(() => ({
+    showAnnouncement: storeConfig?.offers?.showAnnouncement ?? true,
+    announcementMessage: storeConfig?.offers?.announcementMessage || storeConfig?.announcement || 'A little tradition, a lot of love',
+    enableDiscount: storeConfig?.offers?.enableDiscount ?? true,
+    offerTitle: storeConfig?.offers?.offerTitle || 'Festive Celebration',
+    discountType: storeConfig?.offers?.discountType || 'percentage',
+    discountPercentage: storeConfig?.offers?.discountPercentage ?? 10,
+    minOrderSubtotal: storeConfig?.offers?.minOrderSubtotal ?? 999,
+    maxCap: storeConfig?.offers?.maxCap ?? 350,
+    enableNudgeBanner: storeConfig?.offers?.enableNudgeBanner ?? true
+  }));
+
+  const [heroSettings, setHeroSettings] = useState(() => ({
+    mobileBanners: storeConfig?.hero?.mobileBanners || [],
+    desktopBanners: storeConfig?.hero?.desktopBanners || ['/hero-banner.jpg'],
+    belowTicker: storeConfig?.hero?.belowTicker || 'House of Taaga · Pune Studio, Maharashtra, India | Call / WhatsApp: +91 93133 06258',
+    endTicker: storeConfig?.hero?.endTicker || '🌿 Each garment is handcrafted with love. Please allow 3–5 days for artisanal finishing and dispatch.'
+  }));
+
+  const heroMobileInputRef = useRef(null);
+  const heroDesktopInputRef = useRef(null);
 
   // Blog / Story Form State
   const [blogs, setBlogs] = useState(() => {
@@ -535,37 +579,121 @@ export const AdminPanel = ({ onClose }) => {
     showToast(nextStock > 0 ? `Marked in stock (${prod.title})` : `Marked out of stock (${prod.title})`);
   };
 
-  // Category Handlers
-  const handleOpenAddCategory = () => {
+  // Category Handlers (Supporting Parent & Subcategory)
+  const handleOpenAddCategory = (parentCatId = '') => {
     setEditingCategoryId(null);
     setCategoryForm({
       name: '',
       slug: '',
+      parentId: parentCatId || '',
       subtitle: '',
-      imageUrl: '/category-kurtas.jpg'
+      imageUrl: ''
     });
     setIsCategoryModalOpen(true);
+  };
+
+  const handleOpenEditCategory = (cat) => {
+    setEditingCategoryId(cat.id || cat.slug);
+    setCategoryForm({
+      name: cat.name || '',
+      slug: cat.slug || '',
+      parentId: cat.parentId || '',
+      subtitle: cat.subtitle || '',
+      imageUrl: cat.imageUrl || cat.image || ''
+    });
+    setIsCategoryModalOpen(true);
+  };
+
+  const handleCategoryThumbnailUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const url = await compressImage(file);
+      setCategoryForm(prev => ({ ...prev, imageUrl: url }));
+      showToast('Thumbnail uploaded successfully');
+    } catch (err) {
+      showToast(err.message || 'Image upload failed', 'error');
+    }
   };
 
   const handleCategorySubmit = (e) => {
     e.preventDefault();
     if (!categoryForm.name.trim()) return;
     const slug = categoryForm.slug.trim() || categoryForm.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const isParent = !categoryForm.parentId;
     const payload = {
       name: categoryForm.name.trim(),
       slug,
+      parentId: categoryForm.parentId || null,
+      isParent,
       subtitle: categoryForm.subtitle.trim(),
       imageUrl: categoryForm.imageUrl.trim() || '/category-kurtas.jpg'
     };
 
     if (editingCategoryId) {
       if (updateCategory) updateCategory(editingCategoryId, payload);
-      showToast('Category updated!');
+      showToast('Category updated successfully');
     } else {
       if (addCategory) addCategory({ ...payload, id: `cat_${Date.now()}` });
-      showToast('Category added!');
+      showToast(isParent ? 'Parent category created!' : 'Subcategory created!');
     }
     setIsCategoryModalOpen(false);
+  };
+
+  // Store Settings Handlers
+  const handleSaveShippingSettings = (e) => {
+    e?.preventDefault();
+    setStoreConfig(prev => ({
+      ...prev,
+      shipping: shippingSettings
+    }));
+    showToast('Delivery & shipping settings saved successfully!', 'success');
+    setActiveSettingModal(null);
+  };
+
+  const handleSaveOffersSettings = (e) => {
+    e?.preventDefault();
+    setStoreConfig(prev => ({
+      ...prev,
+      offers: offersSettings,
+      announcement: offersSettings.announcementMessage
+    }));
+    showToast('Discount & offers settings saved successfully!', 'success');
+    setActiveSettingModal(null);
+  };
+
+  const handleSaveHeroSettings = (e) => {
+    e?.preventDefault();
+    setStoreConfig(prev => ({
+      ...prev,
+      hero: heroSettings
+    }));
+    showToast('Hero banner & ticker settings saved successfully!', 'success');
+    setActiveSettingModal(null);
+  };
+
+  const handleMobileBannerUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    for (const f of files.slice(0, 5 - heroSettings.mobileBanners.length)) {
+      try {
+        const url = await compressImage(f);
+        setHeroSettings(prev => ({ ...prev, mobileBanners: [...prev.mobileBanners, url] }));
+      } catch (err) {}
+    }
+    showToast('Mobile banner(s) uploaded');
+  };
+
+  const handleDesktopBannerUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    for (const f of files.slice(0, 5 - heroSettings.desktopBanners.length)) {
+      try {
+        const url = await compressImage(f);
+        setHeroSettings(prev => ({ ...prev, desktopBanners: [...prev.desktopBanners, url] }));
+      } catch (err) {}
+    }
+    showToast('Desktop banner(s) uploaded');
   };
 
   // Blog Handlers
@@ -1296,92 +1424,178 @@ export const AdminPanel = ({ onClose }) => {
           )}
 
           {/* ========================================================
-              TAB 3: CATEGORIES
+              TAB 3: CATEGORIES (WITH PARENT & SUBCATEGORY SUPPORT)
              ======================================================== */}
-          {adminTab === 'categories' && (
-            <div className="space-y-4 max-w-6xl mx-auto">
-              
-              <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs">
-                <div>
-                  <h3 className="font-bold text-base text-[#1C1E21]">
-                    Store Collections & Categories
-                  </h3>
-                  <p className="text-xs text-neutral-400">
-                    Mughal arch categories displayed on the storefront
-                  </p>
+          {adminTab === 'categories' && (() => {
+            const parentCats = categories.filter(c => !c.parentId);
+            const subCats = categories.filter(c => c.parentId);
+            const displayedCategories = categoryFilter === 'parent' 
+              ? parentCats 
+              : categoryFilter === 'sub' 
+              ? subCats 
+              : categories;
+
+            return (
+              <div className="space-y-4 max-w-6xl mx-auto">
+                
+                {/* Header with + New category button matching screenshot */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 sm:p-5 rounded-2xl border border-[#E2E8F0] shadow-xs">
+                  <div>
+                    <h3 className="font-bold text-lg text-[#1C1E21]">
+                      Store Collections & Categories
+                    </h3>
+                    <p className="text-xs text-neutral-400 mt-0.5">
+                      Organize parent collections and subcategories with custom thumbnails
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleOpenAddCategory('')}
+                    className="px-4 py-2.5 bg-[#1B5E3C] hover:bg-[#15472E] text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer shrink-0"
+                  >
+                    <Plus className="w-4 h-4 stroke-[2.5]" />
+                    <span>New category</span>
+                  </button>
                 </div>
-                <button
-                  onClick={handleOpenAddCategory}
-                  className="px-4 py-2 bg-[#1B5E3C] hover:bg-[#15472E] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Category</span>
-                </button>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {categories.map((cat) => {
-                  const itemsCount = products.filter(p => (p.categorySlug || p.category || '').toLowerCase() === cat.slug.toLowerCase()).length;
-
-                  return (
-                    <div 
-                      key={cat.id || cat.slug}
-                      className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-xs flex flex-col justify-between"
+                {/* Filter Pills */}
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                  {[
+                    { id: 'all', label: `All (${categories.length})` },
+                    { id: 'parent', label: `Parent Categories (${parentCats.length})` },
+                    { id: 'sub', label: `Subcategories (${subCats.length})` }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setCategoryFilter(tab.id)}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
+                        categoryFilter === tab.id
+                          ? 'bg-[#1C1E21] text-white shadow-xs'
+                          : 'bg-white border border-[#CBD5E1] text-neutral-600 hover:bg-neutral-50'
+                      }`}
                     >
-                      <div>
-                        <div className="aspect-[4/3] rounded-xl overflow-hidden bg-[#FAF2E9] border border-[#E8D9C8] mb-3">
-                          <img 
-                            src={cat.imageUrl || '/category-kurtas.jpg'} 
-                            alt={cat.name}
-                            className="w-full h-full object-cover" 
-                          />
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Category Cards Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {displayedCategories.map((cat) => {
+                    const itemsCount = products.filter(p => (p.categorySlug || p.category || '').toLowerCase() === cat.slug.toLowerCase()).length;
+                    const isParent = !cat.parentId;
+                    const parentCategory = cat.parentId ? categories.find(c => c.id === cat.parentId || c.slug === cat.parentId) : null;
+                    const childSubcategories = categories.filter(c => c.parentId === cat.id || c.parentId === cat.slug);
+
+                    return (
+                      <div 
+                        key={cat.id || cat.slug}
+                        className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-xs flex flex-col justify-between hover:border-[#CBD5E1] transition-all"
+                      >
+                        <div>
+                          {/* Thumbnail */}
+                          <div className="aspect-[4/3] rounded-xl overflow-hidden bg-[#FAF2E9] border border-[#E8D9C8] mb-3 relative">
+                            <img 
+                              src={cat.imageUrl || cat.image || '/category-kurtas.jpg'} 
+                              alt={cat.name}
+                              className="w-full h-full object-cover" 
+                            />
+                            {/* Hierarchy Badge on Thumbnail */}
+                            <div className="absolute top-2 left-2">
+                              {isParent ? (
+                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#1B5E3C] text-white shadow-xs">
+                                  Parent
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-600 text-white shadow-xs">
+                                  Subcategory
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-start justify-between gap-1">
+                            <div>
+                              <h4 className="font-serif text-base font-bold text-[#1C1E21]">
+                                {cat.name}
+                              </h4>
+                              {parentCategory && (
+                                <p className="text-[11px] font-medium text-amber-700 flex items-center gap-1 mt-0.5">
+                                  <FolderTree className="w-3 h-3" />
+                                  <span>under {parentCategory.name}</span>
+                                </p>
+                              )}
+                              <p className="text-xs text-neutral-500 font-light mt-0.5 line-clamp-1">
+                                {cat.subtitle || 'Boutique Collection'}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 mt-2.5">
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#FAF2E9] text-[#B65A37] font-semibold">
+                              {itemsCount} pieces
+                            </span>
+                            {isParent && childSubcategories.length > 0 && (
+                              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-semibold">
+                                {childSubcategories.length} subs
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <h4 className="font-serif text-base font-bold text-[#1C1E21]">
-                          {cat.name}
-                        </h4>
-                        <p className="text-xs text-neutral-500 font-light mt-0.5">
-                          {cat.subtitle || 'Boutique Collection'}
-                        </p>
-                        <span className="inline-block mt-2 text-[10.5px] font-mono px-2.5 py-0.5 rounded-full bg-[#FAF2E9] text-[#B65A37] font-semibold">
-                          {itemsCount} pieces assigned
-                        </span>
-                      </div>
 
-                      <div className="pt-3 border-t border-neutral-100 flex items-center justify-end gap-2 mt-3">
-                        <button
-                          onClick={() => {
-                            setEditingCategoryId(cat.id || cat.slug);
-                            setCategoryForm({
-                              name: cat.name,
-                              slug: cat.slug,
-                              subtitle: cat.subtitle || '',
-                              imageUrl: cat.imageUrl || ''
-                            });
-                            setIsCategoryModalOpen(true);
-                          }}
-                          className="px-3 py-1 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-lg text-xs font-medium"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (window.confirm(`Delete category "${cat.name}"?`)) {
-                              if (deleteCategory) deleteCategory(cat.id || cat.slug);
-                              showToast('Category deleted');
-                            }
-                          }}
-                          className="p-1 text-rose-600 hover:bg-rose-50 rounded-lg"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {/* Actions */}
+                        <div className="pt-3 border-t border-neutral-100 flex items-center justify-between gap-2 mt-3">
+                          {isParent ? (
+                            <button
+                              onClick={() => handleOpenAddCategory(cat.id || cat.slug)}
+                              title="Add subcategory under this parent"
+                              className="text-[11px] font-medium text-[#1B5E3C] hover:underline flex items-center gap-1 cursor-pointer"
+                            >
+                              <Plus className="w-3 h-3" />
+                              <span>+ Sub</span>
+                            </button>
+                          ) : <div />}
+
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => handleOpenEditCategory(cat)}
+                              className="px-2.5 py-1 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-lg text-xs font-medium cursor-pointer transition-colors"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`Delete category "${cat.name}"?`)) {
+                                  if (deleteCategory) deleteCategory(cat.id || cat.slug);
+                                  showToast('Category deleted');
+                                }
+                              }}
+                              className="p-1 text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
                       </div>
+                    );
+                  })}
+
+                  {displayedCategories.length === 0 && (
+                    <div className="col-span-full py-12 text-center bg-white rounded-2xl border border-dashed border-[#CBD5E1] p-6">
+                      <FolderTree className="w-10 h-10 text-neutral-300 mx-auto mb-2" />
+                      <p className="text-sm font-semibold text-neutral-700">No categories match this filter</p>
+                      <button
+                        onClick={() => handleOpenAddCategory('')}
+                        className="mt-3 px-5 py-2 bg-[#1B5E3C] text-white rounded-xl text-xs font-semibold"
+                      >
+                        + Create Category
+                      </button>
                     </div>
-                  );
-                })}
-              </div>
+                  )}
+                </div>
 
-            </div>
-          )}
+              </div>
+            );
+          })()}
 
           {/* ========================================================
               TAB 4: ORDERS
@@ -1747,189 +1961,109 @@ export const AdminPanel = ({ onClose }) => {
           )}
 
           {/* ========================================================
-              TAB 8: STORE SETTINGS
+              TAB 8: STORE SETTINGS (EXACT MATCH TO UPLOADED CARDS)
+              Excludes navbar settings & video cards as instructed
              ======================================================== */}
           {adminTab === 'settings' && (
-            <div className="space-y-6 max-w-4xl mx-auto">
+            <div className="space-y-6 max-w-5xl mx-auto">
               
-              {/* Boutique Settings Card */}
-              <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 shadow-xs space-y-4">
-                <div className="flex items-center gap-3 pb-3 border-b border-neutral-100">
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
-                    <Settings className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-base text-[#1C1E21]">
-                      Store Details & Profile
-                    </h3>
-                    <p className="text-xs text-neutral-400">
-                      Boutique contact information, address, and policies
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-4 text-xs">
-                  <div>
-                    <label className="block text-neutral-700 font-semibold mb-1">
-                      Store Name
-                    </label>
-                    <input
-                      type="text"
-                      value={storeConfig.storeName || 'House of Taaga'}
-                      onChange={(e) => setStoreConfig(prev => ({ ...prev, storeName: e.target.value }))}
-                      className="w-full px-4 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#B65A37]/30"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-neutral-700 font-semibold mb-1">
-                      Tagline / Brand Philosophy
-                    </label>
-                    <input
-                      type="text"
-                      value={storeConfig.tagline || 'A little tradition, a lot of love'}
-                      onChange={(e) => setStoreConfig(prev => ({ ...prev, tagline: e.target.value }))}
-                      className="w-full px-4 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#B65A37]/30"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-neutral-700 font-semibold mb-1">
-                        WhatsApp Number *
-                      </label>
-                      <input
-                        type="text"
-                        value={storeConfig.whatsappNumber || '+91 93133 06258'}
-                        onChange={(e) => setStoreConfig(prev => ({ ...prev, whatsappNumber: e.target.value }))}
-                        className="w-full px-4 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#B65A37]/30"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-neutral-700 font-semibold mb-1">
-                        Support Email
-                      </label>
-                      <input
-                        type="email"
-                        value={storeConfig.supportEmail || 'care@houseoftaaga.com'}
-                        onChange={(e) => setStoreConfig(prev => ({ ...prev, supportEmail: e.target.value }))}
-                        className="w-full px-4 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#B65A37]/30"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-neutral-700 font-semibold mb-1">
-                      Studio Location
-                    </label>
-                    <input
-                      type="text"
-                      value={storeConfig.location || 'House of Taaga Studio, Pune, Maharashtra, India'}
-                      onChange={(e) => setStoreConfig(prev => ({ ...prev, location: e.target.value }))}
-                      className="w-full px-4 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#B65A37]/30"
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => showToast('Store settings saved successfully!')}
-                    className="w-full py-3 bg-[#B65A37] hover:bg-[#A7472B] text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"
-                  >
-                    Save Store Settings
-                  </button>
-                </div>
+              {/* Header */}
+              <div>
+                <h2 className="text-2xl font-bold text-[#1C1E21] tracking-tight">
+                  Store Settings
+                </h2>
+                <p className="text-xs sm:text-sm text-neutral-500 mt-1">
+                  Choose a setting to configure your store.
+                </p>
               </div>
 
-              {/* Master Password Change Card */}
-              <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 shadow-xs space-y-4">
-                <div className="flex items-center gap-3 pb-3 border-b border-neutral-100">
-                  <div className="w-10 h-10 rounded-xl bg-red-50 text-red-700 flex items-center justify-center">
-                    <Key className="w-5 h-5" />
+              {/* 4 Cards Grid matching uploaded design */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+                
+                {/* Card 1: Offers & Discounts */}
+                <div
+                  onClick={() => setActiveSettingModal('offers')}
+                  className="bg-white rounded-3xl border border-[#E2E8F0] p-6 sm:p-7 hover:border-[#CBD5E1] hover:shadow-md transition-all cursor-pointer flex flex-col justify-between min-h-[190px] group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="w-12 h-12 rounded-2xl bg-[#EAF4ED] text-[#1B5E3C] flex items-center justify-center">
+                      <Percent className="w-6 h-6 stroke-[2.2]" />
+                    </div>
+                    <ArrowUpRight className="w-5 h-5 text-neutral-400 group-hover:text-[#1B5E3C] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
                   </div>
                   <div>
                     <h3 className="font-bold text-base text-[#1C1E21]">
-                      Admin Master Security & Password
+                      Offers & Discounts
                     </h3>
-                    <p className="text-xs text-neutral-400">
-                      Update the cryptographic password used to unlock this admin panel.
+                    <p className="text-xs text-neutral-500 mt-1.5 leading-relaxed">
+                      Announcement bar text, discount rules and progress nudges
                     </p>
                   </div>
                 </div>
 
-                <form onSubmit={handleChangePassword} className="space-y-4 text-xs">
-                  {passFeedback && (
-                    <div className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
-                      passFeedback.type === 'success' 
-                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' 
-                        : 'bg-rose-50 text-rose-800 border border-rose-200'
-                    }`}>
-                      {passFeedback.type === 'success' ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      ) : (
-                        <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-                      )}
-                      <span>{passFeedback.message}</span>
+                {/* Card 2: Hero Banner Editing */}
+                <div
+                  onClick={() => setActiveSettingModal('hero')}
+                  className="bg-white rounded-3xl border border-[#E2E8F0] p-6 sm:p-7 hover:border-[#CBD5E1] hover:shadow-md transition-all cursor-pointer flex flex-col justify-between min-h-[190px] group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="w-12 h-12 rounded-2xl bg-[#EAF4ED] text-[#1B5E3C] flex items-center justify-center">
+                      <ImageIcon className="w-6 h-6 stroke-[2.2]" />
                     </div>
-                  )}
-
+                    <ArrowUpRight className="w-5 h-5 text-neutral-400 group-hover:text-[#1B5E3C] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                  </div>
                   <div>
-                    <label className="block text-neutral-700 font-semibold mb-1">
-                      Current Password *
-                    </label>
-                    <input
-                      type="password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      placeholder="Current password"
-                      className="w-full px-4 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm"
-                    />
+                    <h3 className="font-bold text-base text-[#1C1E21]">
+                      Hero Banner Editing
+                    </h3>
+                    <p className="text-xs text-neutral-500 mt-1.5 leading-relaxed">
+                      Banner images and homepage tickers
+                    </p>
                   </div>
+                </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-neutral-700 font-semibold mb-1">
-                        New Password *
-                      </label>
-                      <input
-                        type="password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="At least 6 characters"
-                        className="w-full px-4 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm"
-                      />
+                {/* Card 3: Delivery & Shipping */}
+                <div
+                  onClick={() => setActiveSettingModal('shipping')}
+                  className="bg-white rounded-3xl border border-[#E2E8F0] p-6 sm:p-7 hover:border-[#CBD5E1] hover:shadow-md transition-all cursor-pointer flex flex-col justify-between min-h-[190px] group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="w-12 h-12 rounded-2xl bg-[#EAF4ED] text-[#1B5E3C] flex items-center justify-center">
+                      <Truck className="w-6 h-6 stroke-[2.2]" />
                     </div>
-                    <div>
-                      <label className="block text-neutral-700 font-semibold mb-1">
-                        Confirm New Password *
-                      </label>
-                      <input
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Repeat new password"
-                        className="w-full px-4 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm"
-                      />
-                    </div>
+                    <ArrowUpRight className="w-5 h-5 text-neutral-400 group-hover:text-[#1B5E3C] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
                   </div>
+                  <div>
+                    <h3 className="font-bold text-base text-[#1C1E21]">
+                      Delivery & Shipping
+                    </h3>
+                    <p className="text-xs text-neutral-500 mt-1.5 leading-relaxed">
+                      Standard charges and free delivery conditions
+                    </p>
+                  </div>
+                </div>
 
-                  <button
-                    type="submit"
-                    disabled={isChangingPass}
-                    className="w-full py-3 bg-[#1C1E21] hover:bg-black text-white rounded-xl text-xs font-semibold shadow-xs transition-colors flex items-center justify-center gap-2"
-                  >
-                    {isChangingPass ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Updating Password...</span>
-                      </>
-                    ) : (
-                      <>
-                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                        <span>Update Admin Password</span>
-                      </>
-                    )}
-                  </button>
-                </form>
+                {/* Card 4: Password Update */}
+                <div
+                  onClick={() => setActiveSettingModal('password')}
+                  className="bg-white rounded-3xl border border-[#E2E8F0] p-6 sm:p-7 hover:border-[#CBD5E1] hover:shadow-md transition-all cursor-pointer flex flex-col justify-between min-h-[190px] group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="w-12 h-12 rounded-2xl bg-[#EAF4ED] text-[#1B5E3C] flex items-center justify-center">
+                      <Lock className="w-6 h-6 stroke-[2.2]" />
+                    </div>
+                    <ArrowUpRight className="w-5 h-5 text-neutral-400 group-hover:text-[#1B5E3C] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base text-[#1C1E21]">
+                      Password Update
+                    </h3>
+                    <p className="text-xs text-neutral-500 mt-1.5 leading-relaxed">
+                      Update admin panel login password
+                    </p>
+                  </div>
+                </div>
+
               </div>
 
             </div>
@@ -1937,6 +2071,708 @@ export const AdminPanel = ({ onClose }) => {
 
         </main>
       </div>
+
+      {/* ========================================================
+          SETTINGS MODAL: DELIVERY & SHIPPING (EXACT MATCH TO SCREENSHOT)
+         ======================================================== */}
+      {activeSettingModal === 'shipping' && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-neutral-200 space-y-6">
+            
+            {/* Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-neutral-100">
+              <div>
+                <span className="text-[10px] font-sans font-bold tracking-[0.2em] uppercase text-neutral-400 block mb-1">
+                  STORE SETTINGS
+                </span>
+                <h3 className="font-bold text-xl sm:text-2xl text-[#1C1E21]">
+                  Delivery & Shipping
+                </h3>
+              </div>
+              <button
+                onClick={() => setActiveSettingModal(null)}
+                className="w-8 h-8 rounded-lg bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-500 transition-colors cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed">
+              Set your store delivery fee and free shipping conditions. These rules automatically apply to all cart totals, checkout orders, and customer announcements.
+            </p>
+
+            <form onSubmit={handleSaveShippingSettings} className="space-y-5">
+              
+              {/* Standard delivery charge (₹) */}
+              <div>
+                <label className="block text-xs sm:text-sm font-semibold text-[#1C1E21] mb-1.5">
+                  Standard delivery charge (₹)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  required
+                  value={shippingSettings.standardCharge}
+                  onChange={(e) => setShippingSettings(prev => ({ ...prev, standardCharge: Number(e.target.value) || 0 }))}
+                  className="w-full px-4 py-3 bg-white border border-[#CBD5E1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1B5E3C]/20 focus:border-[#1B5E3C] text-[#1C1E21]"
+                />
+                <p className="text-xs text-neutral-400 mt-1.5">
+                  Fee added when order total is below the free delivery minimum.
+                </p>
+              </div>
+
+              {/* Free delivery minimum order (₹) */}
+              <div>
+                <label className="block text-xs sm:text-sm font-semibold text-[#1C1E21] mb-1.5">
+                  Free delivery minimum order (₹)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  required
+                  value={shippingSettings.freeDeliveryMin}
+                  onChange={(e) => setShippingSettings(prev => ({ ...prev, freeDeliveryMin: Number(e.target.value) || 0 }))}
+                  className="w-full px-4 py-3 bg-white border border-[#CBD5E1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1B5E3C]/20 focus:border-[#1B5E3C] text-[#1C1E21]"
+                />
+                <p className="text-xs text-neutral-400 mt-1.5">
+                  Minimum items total for free shipping. Set to 0 for free delivery on all orders.
+                </p>
+              </div>
+
+              {/* Active Rule Summary Card */}
+              <div className="p-4 sm:p-5 rounded-2xl border border-[#A7D7B5] bg-[#F2FBF5] flex items-start gap-3">
+                <Truck className="w-5 h-5 text-[#1B5E3C] shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-bold text-xs sm:text-sm text-[#1B5E3C]">
+                    Active Rule Summary
+                  </h4>
+                  <p className="text-xs text-neutral-600 mt-1 leading-relaxed">
+                    Orders under ₹{shippingSettings.freeDeliveryMin.toLocaleString('en-IN')} pay ₹{shippingSettings.standardCharge} delivery. Orders ₹{shippingSettings.freeDeliveryMin.toLocaleString('en-IN')} and above qualify for FREE delivery.
+                  </p>
+                </div>
+              </div>
+
+              {/* Action */}
+              <div className="flex items-center justify-end pt-4 border-t border-neutral-100">
+                <button
+                  type="submit"
+                  className="px-6 py-3 bg-[#1B5E3C] hover:bg-[#15472E] text-white rounded-xl text-xs sm:text-sm font-semibold shadow-xs transition-colors cursor-pointer"
+                >
+                  Save delivery settings
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          SETTINGS MODAL: OFFERS & DISCOUNTS (EXACT MATCH TO SCREENSHOT)
+         ======================================================== */}
+      {activeSettingModal === 'offers' && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-neutral-200 space-y-6 my-8">
+            
+            {/* Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-neutral-100">
+              <div>
+                <span className="text-[10px] font-sans font-bold tracking-[0.2em] uppercase text-neutral-400 block mb-1">
+                  STORE SETTINGS
+                </span>
+                <h3 className="font-bold text-xl sm:text-2xl text-[#1C1E21]">
+                  Offers & Discounts
+                </h3>
+              </div>
+              <button
+                onClick={() => setActiveSettingModal(null)}
+                className="w-8 h-8 rounded-lg bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-500 transition-colors cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveOffersSettings} className="space-y-6">
+              
+              {/* Section 1: Announcement Bar Header */}
+              <div className="p-5 rounded-2xl border border-[#CBD5E1] bg-white space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-[#EAF4ED] text-[#1B5E3C] flex items-center justify-center shrink-0">
+                    <Tag className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm text-[#1C1E21]">
+                      Announcement Bar Header
+                    </h4>
+                    <p className="text-xs text-neutral-400 mt-0.5">
+                      Customize the banner message shown at the top of every page.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2">
+                  <div>
+                    <span className="text-xs font-semibold text-[#1C1E21] block">
+                      Show Announcement Bar
+                    </span>
+                    <span className="text-[11px] text-neutral-400">
+                      Toggle the top announcement bar visible on the storefront.
+                    </span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      checked={offersSettings.showAnnouncement} 
+                      onChange={(e) => setOffersSettings(prev => ({ ...prev, showAnnouncement: e.target.checked }))} 
+                      className="sr-only peer" 
+                    />
+                    <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#1B5E3C]"></div>
+                  </label>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#1C1E21] mb-1.5">
+                    Announcement Message
+                  </label>
+                  <input
+                    type="text"
+                    value={offersSettings.announcementMessage}
+                    onChange={(e) => setOffersSettings(prev => ({ ...prev, announcementMessage: e.target.value }))}
+                    placeholder="Special Offer: Free shipping on orders above ₹3,999! 🌿"
+                    className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#1B5E3C]/20 focus:border-[#1B5E3C]"
+                  />
+                  <p className="text-[11px] text-neutral-400 mt-1">
+                    Displayed prominently at the very top of the store.
+                  </p>
+                </div>
+              </div>
+
+              {/* Section 2: Automatic Discount Rule */}
+              <div className="p-5 rounded-2xl border border-[#CBD5E1] bg-white space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-[#EAF4ED] text-[#1B5E3C] flex items-center justify-center shrink-0">
+                    <Percent className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm text-[#1C1E21]">
+                      Automatic Discount Rule
+                    </h4>
+                    <p className="text-xs text-neutral-400 mt-0.5">
+                      Configure automatic discounts applied to the customer's cart and checkout.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2">
+                  <div>
+                    <span className="text-xs font-semibold text-[#1C1E21] block">
+                      Enable Automatic Discount
+                    </span>
+                    <span className="text-[11px] text-neutral-400">
+                      When enabled, qualifying orders automatically receive this discount.
+                    </span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      checked={offersSettings.enableDiscount} 
+                      onChange={(e) => setOffersSettings(prev => ({ ...prev, enableDiscount: e.target.checked }))} 
+                      className="sr-only peer" 
+                    />
+                    <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#1B5E3C]"></div>
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1C1E21] mb-1">
+                      Offer Title
+                    </label>
+                    <input
+                      type="text"
+                      value={offersSettings.offerTitle}
+                      onChange={(e) => setOffersSettings(prev => ({ ...prev, offerTitle: e.target.value }))}
+                      placeholder="Festive Celebration"
+                      className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1C1E21] mb-1">
+                      Discount Type
+                    </label>
+                    <select
+                      value={offersSettings.discountType}
+                      onChange={(e) => setOffersSettings(prev => ({ ...prev, discountType: e.target.value }))}
+                      className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm"
+                    >
+                      <option value="percentage">Percentage (%)</option>
+                      <option value="fixed">Fixed Amount (₹)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1C1E21] mb-1">
+                      Discount Percentage (%)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={offersSettings.discountPercentage}
+                      onChange={(e) => setOffersSettings(prev => ({ ...prev, discountPercentage: Number(e.target.value) || 0 }))}
+                      className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1C1E21] mb-1">
+                      Min Order Subtotal (₹)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={offersSettings.minOrderSubtotal}
+                      onChange={(e) => setOffersSettings(prev => ({ ...prev, minOrderSubtotal: Number(e.target.value) || 0 }))}
+                      className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1C1E21] mb-1">
+                      Max Cap (₹, optional)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={offersSettings.maxCap}
+                      onChange={(e) => setOffersSettings(prev => ({ ...prev, maxCap: Number(e.target.value) || 0 }))}
+                      placeholder="350"
+                      className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 3: Conversion Nudge Banner */}
+              <div className="p-5 rounded-2xl border border-[#CBD5E1] bg-white space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-[#EAF4ED] text-[#1B5E3C] flex items-center justify-center shrink-0">
+                    <Gift className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm text-[#1C1E21]">
+                      Conversion Nudge Banner
+                    </h4>
+                    <p className="text-xs text-neutral-400 mt-0.5">
+                      Show a motivating progress banner when the customer reaches 51% of the discount threshold.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2">
+                  <div>
+                    <span className="text-xs font-semibold text-[#1C1E21] block">
+                      Enable 51% Near-Threshold Nudge Banner
+                    </span>
+                    <span className="text-[11px] text-neutral-400">
+                      Displays an encouraging progress banner in the cart and checkout urging customers to add more items.
+                    </span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      checked={offersSettings.enableNudgeBanner} 
+                      onChange={(e) => setOffersSettings(prev => ({ ...prev, enableNudgeBanner: e.target.checked }))} 
+                      className="sr-only peer" 
+                    />
+                    <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#1B5E3C]"></div>
+                  </label>
+                </div>
+
+                {/* Banner Preview */}
+                <div className="p-4 rounded-xl border border-dashed border-[#A7D7B5] bg-[#F2FBF5] space-y-2">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-500 font-semibold block">
+                    CUSTOMER BANNER PREVIEW (WHEN 51%+ OF THRESHOLD)
+                  </span>
+                  <div className="bg-white p-3.5 rounded-xl border border-neutral-200 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-neutral-900">
+                        🎉 Almost There!
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                        {offersSettings.discountPercentage}% OFF
+                      </span>
+                    </div>
+                    <p className="text-xs text-neutral-600 mt-1">
+                      Add just ₹350 more to unlock {offersSettings.discountPercentage}% OFF on your order!
+                    </p>
+                    <div className="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden mt-2">
+                      <div className="w-3/5 h-full bg-[#1B5E3C] rounded-full"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action */}
+              <div className="flex items-center justify-end pt-4 border-t border-neutral-100">
+                <button
+                  type="submit"
+                  className="px-6 py-3 bg-[#1B5E3C] hover:bg-[#15472E] text-white rounded-xl text-xs sm:text-sm font-semibold shadow-xs transition-colors cursor-pointer"
+                >
+                  Save discount settings
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          SETTINGS MODAL: HERO BANNER EDITING (EXACT MATCH TO SCREENSHOT)
+         ======================================================== */}
+      {activeSettingModal === 'hero' && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl border border-neutral-200 space-y-6 my-8">
+            
+            {/* Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-neutral-100">
+              <div>
+                <span className="text-[10px] font-sans font-bold tracking-[0.2em] uppercase text-neutral-400 block mb-1">
+                  STORE SETTINGS
+                </span>
+                <h3 className="font-bold text-xl sm:text-2xl text-[#1C1E21]">
+                  Hero Banner Editing
+                </h3>
+              </div>
+              <button
+                onClick={() => setActiveSettingModal(null)}
+                className="w-8 h-8 rounded-lg bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-500 transition-colors cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed">
+              Configure dynamic hero banners with separate mobile and desktop uploads, plus scrolling tickers.
+            </p>
+
+            <form onSubmit={handleSaveHeroSettings} className="space-y-6">
+              
+              {/* Card 1: Mobile Hero Banners */}
+              <div className="p-5 rounded-2xl border border-[#CBD5E1] bg-white space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="w-4 h-4 text-neutral-600" />
+                    <h4 className="font-bold text-sm text-[#1C1E21]">
+                      1. Mobile Hero Banners
+                    </h4>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                    Visible on Mobile Screen (&lt; 768px)
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-400">
+                  Upload up to 5 images displayed on mobile phones and small screens. Recommended aspect ratio: 4:3, 1:1, or 9:16 portrait/square banners (e.g. 1080×1080 or 1080×1350).
+                </p>
+
+                {/* Uploaded List or Empty Message */}
+                {heroSettings.mobileBanners.length === 0 ? (
+                  <div className="p-3.5 rounded-xl border border-dashed border-neutral-200 text-center text-xs text-neutral-400">
+                    No mobile banners added yet. If left empty, desktop banners will automatically be displayed on mobile devices as a fallback.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-4 gap-2">
+                    {heroSettings.mobileBanners.map((img, idx) => (
+                      <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-neutral-200 group">
+                        <img src={img} alt={`Mobile Banner ${idx}`} className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setHeroSettings(prev => ({ ...prev, mobileBanners: prev.mobileBanners.filter((_, i) => i !== idx) }))}
+                          className="absolute top-1 right-1 p-1 bg-rose-600 text-white rounded-full opacity-80 hover:opacity-100 cursor-pointer"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Upload Box */}
+                <input 
+                  type="file" 
+                  ref={heroMobileInputRef} 
+                  onChange={handleMobileBannerUpload} 
+                  accept="image/*" 
+                  multiple 
+                  className="hidden" 
+                />
+                <div
+                  onClick={() => heroMobileInputRef.current?.click()}
+                  className="p-6 rounded-2xl border-2 border-dashed border-[#A7D7B5] hover:bg-[#F2FBF5] text-center cursor-pointer transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-full bg-[#EAF4ED] text-[#1B5E3C] flex items-center justify-center mx-auto mb-2">
+                    <Upload className="w-5 h-5" />
+                  </div>
+                  <span className="text-xs font-bold text-neutral-800 block">
+                    Upload Mobile Banners (Click or Drag &amp; Drop)
+                  </span>
+                  <span className="text-[11px] text-neutral-400 mt-1 block">
+                    Select up to 5 JPG, PNG or WebP images optimized for smartphone screens.
+                  </span>
+                </div>
+              </div>
+
+              {/* Card 2: Desktop Hero Banners */}
+              <div className="p-5 rounded-2xl border border-[#CBD5E1] bg-white space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Monitor className="w-4 h-4 text-neutral-600" />
+                    <h4 className="font-bold text-sm text-[#1C1E21]">
+                      2. Desktop Hero Banners
+                    </h4>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                    Visible on Desktop &amp; Tablet (≥ 768px)
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-400">
+                  Upload up to 5 images displayed on desktop monitors, laptops, and tablets. Covers the full width in desktop view. Recommended aspect ratio: 16:9, 21:9, or panoramic landscape (e.g. 1920×600 or 1920×820).
+                </p>
+
+                {/* Desktop Banners list */}
+                {heroSettings.desktopBanners.length === 0 ? (
+                  <div className="p-3.5 rounded-xl border border-dashed border-neutral-200 text-center text-xs text-neutral-400">
+                    No desktop banners added yet. Click "Upload Desktop Banners" below to add your first banner.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {heroSettings.desktopBanners.map((img, idx) => (
+                      <div key={idx} className="relative aspect-[16/9] rounded-xl overflow-hidden border border-neutral-200 group">
+                        <img src={img} alt={`Desktop Banner ${idx}`} className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setHeroSettings(prev => ({ ...prev, desktopBanners: prev.desktopBanners.filter((_, i) => i !== idx) }))}
+                          className="absolute top-1.5 right-1.5 p-1 bg-rose-600 text-white rounded-full opacity-80 hover:opacity-100 cursor-pointer"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Upload Box */}
+                <input 
+                  type="file" 
+                  ref={heroDesktopInputRef} 
+                  onChange={handleDesktopBannerUpload} 
+                  accept="image/*" 
+                  multiple 
+                  className="hidden" 
+                />
+                <div
+                  onClick={() => heroDesktopInputRef.current?.click()}
+                  className="p-6 rounded-2xl border-2 border-dashed border-[#A7D7B5] hover:bg-[#F2FBF5] text-center cursor-pointer transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-full bg-[#EAF4ED] text-[#1B5E3C] flex items-center justify-center mx-auto mb-2">
+                    <Upload className="w-5 h-5" />
+                  </div>
+                  <span className="text-xs font-bold text-neutral-800 block">
+                    Upload Desktop Banners (Click or Drag &amp; Drop)
+                  </span>
+                  <span className="text-[11px] text-neutral-400 mt-1 block">
+                    Select up to 5 widescreen JPG, PNG or WebP images spanning the full width of desktop screens.
+                  </span>
+                </div>
+              </div>
+
+              {/* Section 3: Below Ticker Text */}
+              <div className="space-y-1.5">
+                <h4 className="font-bold text-sm text-[#1C1E21]">Below Ticker Text</h4>
+                <p className="text-xs text-neutral-400">
+                  The scrolling marquee notice displayed right underneath the hero banner.
+                </p>
+                <label className="block text-xs font-semibold text-[#1C1E21] pt-1">
+                  Below ticker notice
+                </label>
+                <textarea
+                  rows={2}
+                  value={heroSettings.belowTicker}
+                  onChange={(e) => setHeroSettings(prev => ({ ...prev, belowTicker: e.target.value }))}
+                  className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm resize-none"
+                />
+              </div>
+
+              {/* Section 4: End Ticker Text */}
+              <div className="space-y-1.5">
+                <h4 className="font-bold text-sm text-[#1C1E21]">End Ticker Text</h4>
+                <p className="text-xs text-neutral-400">
+                  The scrolling packing and order preparation notice displayed near the bottom of the page.
+                </p>
+                <label className="block text-xs font-semibold text-[#1C1E21] pt-1">
+                  End ticker notice
+                </label>
+                <textarea
+                  rows={2}
+                  value={heroSettings.endTicker}
+                  onChange={(e) => setHeroSettings(prev => ({ ...prev, endTicker: e.target.value }))}
+                  className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm resize-none"
+                />
+              </div>
+
+              {/* Action */}
+              <div className="flex items-center justify-end pt-4 border-t border-neutral-100">
+                <button
+                  type="submit"
+                  className="px-6 py-3 bg-[#1B5E3C] hover:bg-[#15472E] text-white rounded-xl text-xs sm:text-sm font-semibold shadow-xs transition-colors cursor-pointer"
+                >
+                  Save settings
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          SETTINGS MODAL: PASSWORD UPDATE
+         ======================================================== */}
+      {activeSettingModal === 'password' && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-neutral-200 space-y-6">
+            
+            {/* Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-neutral-100">
+              <div>
+                <span className="text-[10px] font-sans font-bold tracking-[0.2em] uppercase text-neutral-400 block mb-1">
+                  STORE SETTINGS
+                </span>
+                <h3 className="font-bold text-xl sm:text-2xl text-[#1C1E21]">
+                  Password Update
+                </h3>
+              </div>
+              <button
+                onClick={() => setActiveSettingModal(null)}
+                className="w-8 h-8 rounded-lg bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-500 transition-colors cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed">
+              Update the master cryptographic password used to unlock this admin panel.
+            </p>
+
+            <form onSubmit={handleChangePassword} className="space-y-4 text-xs">
+              {passFeedback && (
+                <div className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
+                  passFeedback.type === 'success' 
+                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' 
+                    : 'bg-rose-50 text-rose-800 border border-rose-200'
+                }`}>
+                  {passFeedback.type === 'success' ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  )}
+                  <span>{passFeedback.message}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-neutral-700 font-semibold mb-1">
+                  Current Password *
+                </label>
+                <div className="relative">
+                  <input
+                    type={showCurrentPass ? 'text' : 'password'}
+                    required
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Current password"
+                    className="w-full pl-3.5 pr-10 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm text-[#1C1E21]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPass(!showCurrentPass)}
+                    className="absolute right-3 top-3 text-neutral-400 hover:text-neutral-600 cursor-pointer"
+                  >
+                    {showCurrentPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-neutral-700 font-semibold mb-1">
+                  New Password *
+                </label>
+                <div className="relative">
+                  <input
+                    type={showNewPass ? 'text' : 'password'}
+                    required
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="At least 6 characters"
+                    className="w-full pl-3.5 pr-10 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm text-[#1C1E21]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPass(!showNewPass)}
+                    className="absolute right-3 top-3 text-neutral-400 hover:text-neutral-600 cursor-pointer"
+                  >
+                    {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-neutral-700 font-semibold mb-1">
+                  Confirm New Password *
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repeat new password"
+                  className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm text-[#1C1E21]"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-neutral-100 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setActiveSettingModal(null)}
+                  className="px-4 py-2.5 rounded-xl border border-neutral-200 text-xs font-semibold text-neutral-600 hover:bg-neutral-50 cursor-pointer transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isChangingPass}
+                  className="px-5 py-2.5 bg-[#1B5E3C] hover:bg-[#15472E] text-white rounded-xl text-xs font-semibold shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {isChangingPass ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Updating...</span>
+                    </>
+                  ) : (
+                    <span>Save Password</span>
+                  )}
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ========================================================
           MOBILE SLIDE-OVER NAVIGATION DRAWER
@@ -2174,73 +3010,159 @@ export const AdminPanel = ({ onClose }) => {
       )}
 
       {/* ========================================================
-          MODAL: ADD / EDIT CATEGORY
+          MODAL: CREATE / EDIT CATEGORY (EXACT MATCH TO SCREENSHOT)
          ======================================================== */}
       {isCategoryModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-neutral-200 space-y-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-neutral-200 space-y-6">
+            
+            {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
-              <h3 className="font-bold text-base text-neutral-900">
-                {editingCategoryId ? 'Edit Category' : 'Add Category'}
+              <h3 className="font-bold text-lg sm:text-xl text-[#1C1E21]">
+                {editingCategoryId ? 'Edit category' : 'Create category'}
               </h3>
               <button
                 onClick={() => setIsCategoryModalOpen(false)}
-                className="p-1 rounded-full hover:bg-neutral-100 text-neutral-500"
+                className="w-8 h-8 rounded-lg bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-500 transition-colors cursor-pointer"
+                aria-label="Close"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCategorySubmit} className="space-y-4 text-xs">
+            <form onSubmit={handleCategorySubmit} className="space-y-5">
+              
+              {/* Category name */}
               <div>
-                <label className="block text-neutral-700 font-semibold mb-1">Category Name *</label>
+                <label className="block text-xs sm:text-sm font-semibold text-[#1C1E21] mb-2">
+                  Category name
+                </label>
                 <input
                   type="text"
                   required
                   value={categoryForm.name}
                   onChange={(e) => setCategoryForm(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="e.g. Kurtas"
-                  className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm"
+                  placeholder="e.g. Fruit Plants, Mango, Indoor Bonsai"
+                  className="w-full px-4 py-3 bg-white border border-[#CBD5E1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1B5E3C]/20 focus:border-[#1B5E3C] placeholder:text-neutral-400 text-[#1C1E21]"
                 />
               </div>
 
+              {/* Parent Category (Optional) */}
               <div>
-                <label className="block text-neutral-700 font-semibold mb-1">Subtitle</label>
+                <label className="block text-xs sm:text-sm font-semibold text-[#1C1E21] mb-2">
+                  Parent Category (Optional)
+                </label>
+                <div className="relative">
+                  <select
+                    value={categoryForm.parentId}
+                    onChange={(e) => setCategoryForm(prev => ({ ...prev, parentId: e.target.value }))}
+                    className="w-full px-4 py-3 bg-white border border-[#CBD5E1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1B5E3C]/20 focus:border-[#1B5E3C] appearance-none cursor-pointer pr-10 text-[#1C1E21]"
+                  >
+                    <option value="">None (Top-level Category)</option>
+                    {categories
+                      .filter(c => !c.parentId && (!editingCategoryId || (c.id !== editingCategoryId && c.slug !== editingCategoryId)))
+                      .map(p => (
+                        <option key={p.id || p.slug} value={p.id || p.slug}>
+                          {p.name}
+                        </option>
+                      ))
+                    }
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-neutral-500">
+                    <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                      <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                    </svg>
+                  </div>
+                </div>
+                <p className="text-xs text-neutral-400 mt-2">
+                  Leave as None for a main category, or choose a parent to create a subcategory.
+                </p>
+              </div>
+
+              {/* Thumbnail */}
+              <div>
+                <label className="block text-xs sm:text-sm font-semibold text-[#1C1E21] mb-2">
+                  Thumbnail
+                </label>
+                <div className="flex items-center gap-4">
+                  {/* Thumbnail Box */}
+                  <div 
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const file = e.dataTransfer?.files?.[0];
+                      if (file) {
+                        compressImage(file).then(url => setCategoryForm(prev => ({ ...prev, imageUrl: url })));
+                      }
+                    }}
+                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-2 border-dashed border-[#A7D7B5] bg-[#F2FBF5] flex items-center justify-center shrink-0 overflow-hidden relative group"
+                  >
+                    {categoryForm.imageUrl ? (
+                      <img 
+                        src={categoryForm.imageUrl} 
+                        alt="Category Preview" 
+                        className="w-full h-full object-cover" 
+                      />
+                    ) : (
+                      <ImageIcon className="w-8 h-8 text-[#1B5E3C]/60" />
+                    )}
+                  </div>
+
+                  {/* Upload Controls */}
+                  <div className="flex-1">
+                    <input 
+                      type="file" 
+                      ref={categoryFileInputRef} 
+                      onChange={handleCategoryThumbnailUpload} 
+                      accept="image/*" 
+                      className="hidden" 
+                    />
+                    <button
+                      type="button"
+                      onClick={() => categoryFileInputRef.current?.click()}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-[#CBD5E1] hover:bg-neutral-50 text-neutral-800 rounded-xl text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                    >
+                      <Upload className="w-4 h-4 text-neutral-600" />
+                      <span>Upload image</span>
+                    </button>
+                    <p className="text-[11px] sm:text-xs text-neutral-400 mt-2 leading-relaxed">
+                      JPG, PNG or WebP, up to 10 MB. Drag & drop image here.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Subtitle / Note */}
+              <div>
+                <label className="block text-xs sm:text-sm font-semibold text-[#1C1E21] mb-1.5">
+                  Subtitle / Description (Optional)
+                </label>
                 <input
                   type="text"
                   value={categoryForm.subtitle}
                   onChange={(e) => setCategoryForm(prev => ({ ...prev, subtitle: e.target.value }))}
-                  placeholder="e.g. Artisanal Everyday Silhouettes"
-                  className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm"
+                  placeholder="e.g. Everyday Grace & Handcrafted Silhouettes"
+                  className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#1B5E3C]/20 focus:border-[#1B5E3C]"
                 />
               </div>
 
-              <div>
-                <label className="block text-neutral-700 font-semibold mb-1">Image URL</label>
-                <input
-                  type="text"
-                  value={categoryForm.imageUrl}
-                  onChange={(e) => setCategoryForm(prev => ({ ...prev, imageUrl: e.target.value }))}
-                  placeholder="/category-kurtas.jpg"
-                  className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-neutral-100">
+              {/* Footer Actions */}
+              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-neutral-100">
                 <button
                   type="button"
                   onClick={() => setIsCategoryModalOpen(false)}
-                  className="px-4 py-2 bg-neutral-100 rounded-xl text-xs font-medium"
+                  className="px-4 py-2.5 rounded-xl border border-neutral-200 text-xs font-semibold text-neutral-600 hover:bg-neutral-50 cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-[#1B5E3C] hover:bg-[#15472E] text-white rounded-xl text-xs font-semibold"
+                  className="px-5 py-2.5 bg-[#1B5E3C] hover:bg-[#15472E] text-white rounded-xl text-xs font-semibold shadow-xs cursor-pointer transition-colors"
                 >
-                  Save Category
+                  {editingCategoryId ? 'Save Category' : 'Create category'}
                 </button>
               </div>
+
             </form>
           </div>
         </div>
