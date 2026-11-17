@@ -2,22 +2,19 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  plugins: [
-    react(),
-    {
-      name: 'house-of-taaga-api',
-      configureServer(server) {
-        import('./server/index.js').then(({ app }) => {
-          server.middlewares.use(app);
-          console.log('✅ [Vite] House of Taaga API mounted in-process into Vite server');
-        }).catch(err => {
-          console.warn('[Vite] Could not mount in-process API:', err.message);
-        });
-      }
-    }
-  ],
+  plugins: [react()],
   server: {
     port: 5173,
-    host: true
+    host: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5001',
+        changeOrigin: true
+      },
+      '/uploads': {
+        target: 'http://localhost:5001',
+        changeOrigin: true
+      }
+    }
   }
 });
