@@ -7,7 +7,6 @@ import { ProductPage } from './pages/ProductPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { OrderSection } from './components/OrderSection';
 import { AdminPanel } from './components/AdminPanel';
-import { BottomNavigation } from './components/BottomNavigation';
 import { CartDrawer } from './components/CartDrawer';
 import { ContactModal } from './components/ContactModal';
 import { AboutModal } from './components/AboutModal';
@@ -21,7 +20,7 @@ const Layout = () => {
   } = useStore();
 
   return (
-    <div className="min-h-screen bg-[#FAF2E9] flex flex-col justify-between text-[#382017] selection:bg-[#B65A37]/20 selection:text-[#382017] pb-16 sm:pb-0">
+    <div className="min-h-screen bg-[#FAF2E9] flex flex-col justify-between text-[#382017] selection:bg-[#B65A37]/20 selection:text-[#382017]">
       
       {/* Toast Notification */}
       {toast && (
@@ -48,9 +47,6 @@ const Layout = () => {
           <Route path="*" element={<HomePage />} />
         </Routes>
       </main>
-
-      {/* Mobile Sticky Bottom Navigation (4 tabs: Home, Bag, Contact, Order) */}
-      <BottomNavigation />
 
       {/* Modals & Slide Drawers */}
       {isAdminOpen && <AdminPanel onClose={() => setIsAdminOpen(false)} />}

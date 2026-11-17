@@ -96,6 +96,32 @@ const compressImage = (file) => {
   });
 };
 
+// Helper to recursively flatten category tree for hierarchical display (depth 0, 1, 2)
+const getCategoryTree = (allCategories = []) => {
+  const result = [];
+  const visited = new Set();
+  const topLevel = allCategories.filter(c => !c.parentId || !allCategories.some(p => (p.id || p.slug) === c.parentId));
+  
+  const addChildren = (parent, depth = 0) => {
+    const parentKey = parent.id || parent.slug;
+    if (visited.has(parentKey)) return;
+    visited.add(parentKey);
+    result.push({ ...parent, depth });
+    const children = allCategories.filter(c => c.parentId && ((c.parentId === parent.id) || (c.parentId === parent.slug)));
+    children.forEach(child => addChildren(child, depth + 1));
+  };
+
+  topLevel.forEach(p => addChildren(p, 0));
+  allCategories.forEach(c => {
+    const key = c.id || c.slug;
+    if (!visited.has(key)) {
+      result.push({ ...c, depth: 0 });
+      visited.add(key);
+    }
+  });
+  return result;
+};
+
 export const AdminPanel = ({ onClose }) => {
   const navigate = useNavigate();
   const { 
@@ -152,22 +178,33 @@ export const AdminPanel = ({ onClose }) => {
   const [orderSearchQuery, setOrderSearchQuery] = useState('');
   const [orderStatusFilter, setOrderStatusFilter] = useState('all');
 
-  // Ref inputs for camera and gallery
-  const fileInputCameraRef = useRef(null);
-  const fileInputGalleryRef = useRef(null);
+  // Ref inputs for product image uploads
+  const primaryImageInputRef = useRef(null);
+  const secondImageInputRef = useRef(null);
 
-  // Product Form State
+  // Product Form State (Matching uploaded reference screenshots)
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
   const [productForm, setProductForm] = useState({
     title: '',
+    categoryIds: [],
     category: 'Kurtas',
     categorySlug: 'kurtas',
     price: '',
     originalPrice: '',
-    stock: '10',
+    primaryImage: '',
+    secondImage: '',
+    shippingScope: 'all_india', // 'all_india' | 'specific_states' | 'specific_pincodes'
     description: '',
-    images: []
+    careTips: '',
+    deliveryReturns: '',
+    replacement: '7-day live plant guarantee',
+    delivery: 'Ships across India in 3-5 days',
+    guidance: 'Lifetime WhatsApp gardening advice',
+    packaging: '5-layer corrugated ventilated box',
+    soldInLast24Hours: '',
+    showSampleReviews: true,
+    inStock: true
   });
 
   // Category Form State (Supporting Parent & Subcategory hierarchy)
@@ -213,66 +250,6 @@ export const AdminPanel = ({ onClose }) => {
 
   const heroMobileInputRef = useRef(null);
   const heroDesktopInputRef = useRef(null);
-
-  // Blog / Story Form State
-  const [blogs, setBlogs] = useState(() => {
-    try {
-      const saved = localStorage.getItem('taaga_admin_blogs');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return [
-      {
-        id: 'blog_1',
-        title: 'The Art of Bandhani & Golden Zari',
-        category: 'TEXTILE CRAFTSMANSHIP',
-        subtitle: 'Exploring traditional tie-dye resist techniques from Kutch to Pune.',
-        readTime: '3 min read',
-        imageUrl: '/category-kurtas.jpg',
-        published: true,
-        date: 'Nov 2026'
-      },
-      {
-        id: 'blog_2',
-        title: 'Mother, Daughter & Morning Chai',
-        category: 'BEHIND THE LABEL',
-        subtitle: 'How kitchen conversations about forgotten heirloom silhouettes turned into House of Taaga.',
-        readTime: '4 min read',
-        imageUrl: '/founders.jpg',
-        published: true,
-        date: 'Oct 2026'
-      },
-      {
-        id: 'blog_3',
-        title: 'Six Yards of Handwoven Poetry',
-        category: 'EDITORIAL LOOKBOOK',
-        subtitle: 'The meditative rhythm of Chanderi looms and hand-beaded borders.',
-        readTime: '3 min read',
-        imageUrl: '/category-sarees.jpg',
-        published: true,
-        date: 'Sep 2026'
-      },
-      {
-        id: 'blog_4',
-        title: 'Festive Kaftans in Natural Light',
-        category: 'SLOW FASHION',
-        subtitle: 'Bridging effortless contemporary fits with hand-embroidered Kashmiri and royal zari yokes.',
-        readTime: '5 min read',
-        imageUrl: '/category-festive.jpg',
-        published: true,
-        date: 'Aug 2026'
-      }
-    ];
-  });
-
-  const [isBlogModalOpen, setIsBlogModalOpen] = useState(false);
-  const [editingBlogId, setEditingBlogId] = useState(null);
-  const [blogForm, setBlogForm] = useState({
-    title: '',
-    category: 'TEXTILE CRAFTSMANSHIP',
-    subtitle: '',
-    readTime: '3 min read',
-    imageUrl: '/category-kurtas.jpg'
-  });
 
   // Affiliates State
   const [affiliates, setAffiliates] = useState(() => {
@@ -324,14 +301,6 @@ export const AdminPanel = ({ onClose }) => {
     code: '',
     discount: '10% OFF'
   });
-
-  // Save blogs to localStorage
-  const saveBlogs = (updated) => {
-    setBlogs(updated);
-    try {
-      localStorage.setItem('taaga_admin_blogs', JSON.stringify(updated));
-    } catch (e) {}
-  };
 
   // Save affiliates to localStorage
   const saveAffiliates = (updated) => {
@@ -456,18 +425,30 @@ export const AdminPanel = ({ onClose }) => {
     }
   };
 
-  // Product Handlers
+  // Product Handlers (Supporting all areas from reference screenshots)
   const handleOpenAddProduct = () => {
     setEditingProductId(null);
+    const defaultCatIds = categories.length > 0 ? [categories[0].id || categories[0].slug] : ['kurtas'];
     setProductForm({
       title: '',
-      category: 'Kurtas',
-      categorySlug: 'kurtas',
+      categoryIds: defaultCatIds,
+      category: categories[0]?.name || 'Kurtas',
+      categorySlug: categories[0]?.slug || 'kurtas',
       price: '',
       originalPrice: '',
-      stock: '10',
+      primaryImage: '',
+      secondImage: '',
+      shippingScope: 'all_india',
       description: '',
-      images: []
+      careTips: '',
+      deliveryReturns: '',
+      replacement: '7-day live plant guarantee',
+      delivery: 'Ships across India in 3-5 days',
+      guidance: 'Lifetime WhatsApp gardening advice',
+      packaging: '5-layer corrugated ventilated box',
+      soldInLast24Hours: '',
+      showSampleReviews: true,
+      inStock: true
     });
     setIsProductModalOpen(true);
   };
@@ -478,51 +459,54 @@ export const AdminPanel = ({ onClose }) => {
       ? prod.images
       : (prod.imageUrl ? [prod.imageUrl] : []);
 
+    const catIds = prod.categoryIds || (prod.categorySlug ? [prod.categorySlug] : []);
+
     setProductForm({
       title: prod.title || prod.name || '',
+      categoryIds: catIds,
       category: prod.category || 'Kurtas',
       categorySlug: prod.categorySlug || 'kurtas',
-      price: prod.price ?? '',
-      originalPrice: prod.originalPrice ?? prod.price ?? '',
-      stock: prod.stock !== undefined ? String(prod.stock) : (prod.inStock === false ? '0' : '10'),
+      price: prod.price !== undefined ? String(prod.price) : '',
+      originalPrice: prod.originalPrice !== undefined ? String(prod.originalPrice) : '',
+      primaryImage: existingImages[0] || prod.imageUrl || '',
+      secondImage: existingImages[1] || '',
+      shippingScope: prod.shippingScope || 'all_india',
       description: prod.description || '',
-      images: existingImages
+      careTips: prod.careTips || prod.fabricCare || '',
+      deliveryReturns: prod.deliveryReturns || '',
+      replacement: prod.highlights?.replacement || '7-day live plant guarantee',
+      delivery: prod.highlights?.delivery || 'Ships across India in 3-5 days',
+      guidance: prod.highlights?.guidance || 'Lifetime WhatsApp gardening advice',
+      packaging: prod.highlights?.packaging || '5-layer corrugated ventilated box',
+      soldInLast24Hours: prod.highlights?.sold24h || '',
+      showSampleReviews: prod.showSampleReviews ?? true,
+      inStock: prod.inStock !== false && (prod.stock === undefined || Number(prod.stock) > 0)
     });
     setIsProductModalOpen(true);
   };
 
-  const handleImageUpload = async (e) => {
-    const files = Array.from(e.target.files || []);
-    if (!files.length) return;
-
-    const remainingSlots = 3 - productForm.images.length;
-    if (remainingSlots <= 0) {
-      showToast('Maximum 3 photos allowed per product', 'error');
-      return;
-    }
-
-    const filesToProcess = files.slice(0, remainingSlots);
-
+  const handleProductPrimaryImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
     try {
-      showToast('Optimizing photo...', 'info');
-      const compressedDataUrls = await Promise.all(filesToProcess.map(f => compressImage(f)));
-      setProductForm(prev => ({
-        ...prev,
-        images: [...prev.images, ...compressedDataUrls]
-      }));
-      showToast(`${filesToProcess.length} photo(s) added successfully!`, 'success');
+      const url = await compressImage(file);
+      setProductForm(prev => ({ ...prev, primaryImage: url }));
+      showToast('Primary image uploaded');
     } catch (err) {
-      showToast(err.message || 'Error processing photo', 'error');
+      showToast(err.message || 'Image upload failed', 'error');
     }
-
-    if (e.target) e.target.value = '';
   };
 
-  const handleRemoveImage = (indexToRemove) => {
-    setProductForm(prev => ({
-      ...prev,
-      images: prev.images.filter((_, idx) => idx !== indexToRemove)
-    }));
+  const handleProductSecondImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const url = await compressImage(file);
+      setProductForm(prev => ({ ...prev, secondImage: url }));
+      showToast('Second image uploaded');
+    } catch (err) {
+      showToast(err.message || 'Image upload failed', 'error');
+    }
   };
 
   const handleProductFormSubmit = (e) => {
@@ -538,20 +522,36 @@ export const AdminPanel = ({ onClose }) => {
     }
 
     const origPriceNum = productForm.originalPrice ? Number(productForm.originalPrice) : priceNum;
-    const stockNum = parseInt(productForm.stock, 10) || 0;
+    const images = [productForm.primaryImage, productForm.secondImage].filter(Boolean);
+    const finalImageUrl = images[0] || '/category-kurtas.jpg';
+
+    // Find primary category name & slug from selected categoryIds
+    const selectedCat = categories.find(c => productForm.categoryIds.includes(c.id || c.slug)) || categories[0];
 
     const payload = {
       title: productForm.title.trim(),
       name: productForm.title.trim(),
-      category: productForm.category,
-      categorySlug: productForm.categorySlug,
+      category: selectedCat ? selectedCat.name : productForm.category,
+      categorySlug: selectedCat ? selectedCat.slug : productForm.categorySlug,
+      categoryIds: productForm.categoryIds,
       price: priceNum,
       originalPrice: origPriceNum >= priceNum ? origPriceNum : priceNum,
-      stock: stockNum,
-      inStock: stockNum > 0,
+      stock: productForm.inStock ? 10 : 0,
+      inStock: productForm.inStock,
       description: productForm.description.trim(),
-      images: productForm.images,
-      imageUrl: productForm.images[0] || ''
+      images: images.length > 0 ? images : [finalImageUrl],
+      imageUrl: finalImageUrl,
+      shippingScope: productForm.shippingScope,
+      careTips: productForm.careTips.trim(),
+      deliveryReturns: productForm.deliveryReturns.trim(),
+      highlights: {
+        replacement: productForm.replacement,
+        delivery: productForm.delivery,
+        guidance: productForm.guidance,
+        packaging: productForm.packaging,
+        sold24h: productForm.soldInLast24Hours
+      },
+      showSampleReviews: productForm.showSampleReviews
     };
 
     if (editingProductId) {
@@ -696,38 +696,6 @@ export const AdminPanel = ({ onClose }) => {
     showToast('Desktop banner(s) uploaded');
   };
 
-  // Blog Handlers
-  const handleOpenAddBlog = () => {
-    setEditingBlogId(null);
-    setBlogForm({
-      title: '',
-      category: 'TEXTILE CRAFTSMANSHIP',
-      subtitle: '',
-      readTime: '3 min read',
-      imageUrl: '/category-kurtas.jpg'
-    });
-    setIsBlogModalOpen(true);
-  };
-
-  const handleBlogSubmit = (e) => {
-    e.preventDefault();
-    if (!blogForm.title.trim()) return;
-    if (editingBlogId) {
-      saveBlogs(blogs.map(b => b.id === editingBlogId ? { ...b, ...blogForm } : b));
-      showToast('Story updated!');
-    } else {
-      const newBlog = {
-        ...blogForm,
-        id: `blog_${Date.now()}`,
-        published: true,
-        date: 'Today'
-      };
-      saveBlogs([newBlog, ...blogs]);
-      showToast('New story published to The Taaga Journal!');
-    }
-    setIsBlogModalOpen(false);
-  };
-
   // Affiliate Handlers
   const handleOpenAddAffiliate = () => {
     setAffiliateForm({
@@ -805,15 +773,13 @@ export const AdminPanel = ({ onClose }) => {
 
   const customerList = Object.values(customerAccounts);
 
-  // The 8 Tabs Config (Exact match to uploaded image)
+  // The Admin Tabs Config
   const navTabs = [
     { id: 'dashboard', label: 'Dashboard', icon: TrendingUp },
     { id: 'inventory', label: 'Inventory', icon: Package, badge: products.length },
     { id: 'categories', label: 'Categories', icon: LayoutGrid, badge: categories.length },
     { id: 'orders', label: 'Orders', icon: ShoppingBag, badge: pendingOrdersCount > 0 ? `${pendingOrdersCount} new` : orders.length },
     { id: 'accounts', label: 'Accounts', icon: Users },
-    { id: 'blogs', label: 'Blogs', icon: FileText, badge: blogs.length },
-    { id: 'affiliate', label: 'Affiliate', icon: Award, badge: affiliates.length },
     { id: 'settings', label: 'Store Settings', icon: Settings },
   ];
 
@@ -945,19 +911,19 @@ export const AdminPanel = ({ onClose }) => {
                   onClick={() => setAdminTab(tab.id)}
                   className={`w-full flex items-center justify-between px-3.5 py-2.5 text-sm transition-all duration-200 cursor-pointer ${
                     isActive
-                      ? 'bg-[#EAF4ED] text-[#1B5E3C] font-semibold rounded-xl shadow-2xs'
+                      ? 'bg-[#FAF2E9] text-[#B65A37] font-semibold rounded-xl shadow-2xs'
                       : 'text-[#4A5568] hover:bg-neutral-100/80 hover:text-neutral-900 rounded-xl font-medium'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <IconComp className={`w-4 h-4 ${isActive ? 'text-[#1B5E3C]' : 'text-[#4A5568]'}`} />
+                    <IconComp className={`w-4 h-4 ${isActive ? 'text-[#B65A37]' : 'text-[#4A5568]'}`} />
                     <span>{tab.label}</span>
                   </div>
 
                   {tab.badge !== undefined && (
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
                       isActive 
-                        ? 'bg-[#1B5E3C] text-white' 
+                        ? 'bg-[#B65A37] text-white' 
                         : 'bg-neutral-100 text-neutral-600'
                     }`}>
                       {tab.badge}
@@ -1036,7 +1002,7 @@ export const AdminPanel = ({ onClose }) => {
               <h1 className="text-sm sm:text-base font-semibold text-[#1C1E21] capitalize">
                 {navTabs.find(t => t.id === adminTab)?.label || 'Dashboard'}
               </h1>
-              <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 rounded-full bg-[#EAF4ED] text-[#1B5E3C] font-semibold font-sans tracking-wide uppercase">
+              <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 rounded-full bg-[#FAF2E9] text-[#B65A37] font-semibold font-sans tracking-wide uppercase">
                 Active
               </span>
             </div>
@@ -1071,7 +1037,7 @@ export const AdminPanel = ({ onClose }) => {
 
             <button
               onClick={handleOpenAddProduct}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#1B5E3C] hover:bg-[#15472E] text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#B65A37] hover:bg-[#A7472B] active:bg-[#8C3E20] text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
               <span className="hidden sm:inline">Add Product</span>
@@ -1220,7 +1186,7 @@ export const AdminPanel = ({ onClose }) => {
                   </div>
                   <button
                     onClick={() => setAdminTab('orders')}
-                    className="text-xs text-[#1B5E3C] hover:underline font-semibold flex items-center gap-1"
+                    className="text-xs text-[#B65A37] hover:underline font-semibold flex items-center gap-1"
                   >
                     <span>Manage all orders</span>
                     <ChevronRight className="w-3.5 h-3.5" />
@@ -1275,7 +1241,7 @@ export const AdminPanel = ({ onClose }) => {
                     value={adminSearch}
                     onChange={(e) => setAdminSearch(e.target.value)}
                     placeholder="Search inventory by title or collection..."
-                    className="w-full pl-10 pr-4 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#1B5E3C]/30"
+                    className="w-full pl-10 pr-4 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
                   />
                   {adminSearch && (
                     <button 
@@ -1289,7 +1255,7 @@ export const AdminPanel = ({ onClose }) => {
 
                 <button
                   onClick={handleOpenAddProduct}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#1B5E3C] hover:bg-[#15472E] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#B65A37] hover:bg-[#A7472B] active:bg-[#8C3E20] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
                 >
                   <Plus className="w-4 h-4 stroke-[2.5]" />
                   <span>Add Product</span>
@@ -1306,7 +1272,7 @@ export const AdminPanel = ({ onClose }) => {
                   return (
                     <div 
                       key={prod.id} 
-                      className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-xs hover:border-[#1B5E3C]/50 transition-all flex flex-col justify-between"
+                      className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-xs hover:border-[#B65A37]/50 transition-all flex flex-col justify-between"
                     >
                       <div>
                         <div className="flex gap-3 items-start">
@@ -1383,7 +1349,7 @@ export const AdminPanel = ({ onClose }) => {
                         <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => handleOpenEditProduct(prod)}
-                            className="inline-flex items-center gap-1 px-3.5 py-1.5 text-[11px] font-medium text-[#1B5E3C] bg-[#EAF4ED] hover:bg-[#1B5E3C] hover:text-white rounded-xl transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1 px-3.5 py-1.5 text-[11px] font-medium text-[#B65A37] bg-[#FAF2E9] hover:bg-[#B65A37] hover:text-white rounded-xl transition-colors cursor-pointer"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                             <span>Edit</span>
@@ -1412,7 +1378,7 @@ export const AdminPanel = ({ onClose }) => {
                     <p className="text-sm font-semibold text-neutral-700">No products found</p>
                     <button
                       onClick={handleOpenAddProduct}
-                      className="mt-3 px-5 py-2 bg-[#1B5E3C] text-white rounded-xl text-xs font-semibold"
+                      className="mt-3 px-5 py-2 bg-[#B65A37] hover:bg-[#A7472B] text-white rounded-xl text-xs font-semibold shadow-xs"
                     >
                       + Add First Product
                     </button>
@@ -1450,7 +1416,7 @@ export const AdminPanel = ({ onClose }) => {
                   </div>
                   <button
                     onClick={() => handleOpenAddCategory('')}
-                    className="px-4 py-2.5 bg-[#1B5E3C] hover:bg-[#15472E] text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer shrink-0"
+                    className="px-4 py-2.5 bg-[#B65A37] hover:bg-[#A7472B] active:bg-[#8C3E20] text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer shrink-0"
                   >
                     <Plus className="w-4 h-4 stroke-[2.5]" />
                     <span>New category</span>
@@ -1502,7 +1468,7 @@ export const AdminPanel = ({ onClose }) => {
                             {/* Hierarchy Badge on Thumbnail */}
                             <div className="absolute top-2 left-2">
                               {isParent ? (
-                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#1B5E3C] text-white shadow-xs">
+                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#B65A37] text-white shadow-xs">
                                   Parent
                                 </span>
                               ) : (
@@ -1548,7 +1514,7 @@ export const AdminPanel = ({ onClose }) => {
                             <button
                               onClick={() => handleOpenAddCategory(cat.id || cat.slug)}
                               title="Add subcategory under this parent"
-                              className="text-[11px] font-medium text-[#1B5E3C] hover:underline flex items-center gap-1 cursor-pointer"
+                              className="text-[11px] font-medium text-[#B65A37] hover:underline flex items-center gap-1 cursor-pointer"
                             >
                               <Plus className="w-3 h-3" />
                               <span>+ Sub</span>
@@ -1585,7 +1551,7 @@ export const AdminPanel = ({ onClose }) => {
                       <p className="text-sm font-semibold text-neutral-700">No categories match this filter</p>
                       <button
                         onClick={() => handleOpenAddCategory('')}
-                        className="mt-3 px-5 py-2 bg-[#1B5E3C] text-white rounded-xl text-xs font-semibold"
+                        className="mt-3 px-5 py-2 bg-[#B65A37] hover:bg-[#A7472B] text-white rounded-xl text-xs font-semibold shadow-xs"
                       >
                         + Create Category
                       </button>
@@ -1611,7 +1577,7 @@ export const AdminPanel = ({ onClose }) => {
                     value={orderSearchQuery}
                     onChange={(e) => setOrderSearchQuery(e.target.value)}
                     placeholder="Search by order ID, customer name, phone..."
-                    className="w-full pl-10 pr-4 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#1B5E3C]/30"
+                    className="w-full pl-10 pr-4 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
                   />
                 </div>
 
@@ -1651,7 +1617,7 @@ export const AdminPanel = ({ onClose }) => {
                           {order.date}
                         </span>
                       </div>
-                      <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-semibold bg-[#FAF2E9] text-[#B65A37] border border-[#E8D9C8]">
                         {order.statusTitle || 'Processing'}
                       </span>
                     </div>
@@ -1672,7 +1638,7 @@ export const AdminPanel = ({ onClose }) => {
                         )}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-medium flex items-center gap-1.5"
+                        className="px-3 py-1.5 bg-[#1C1E21] hover:bg-neutral-800 text-white rounded-xl text-xs font-medium flex items-center gap-1.5 shadow-xs transition-colors"
                       >
                         <MessageCircle className="w-3.5 h-3.5" />
                         <span>WhatsApp</span>
@@ -1788,180 +1754,7 @@ export const AdminPanel = ({ onClose }) => {
           )}
 
           {/* ========================================================
-              TAB 6: BLOGS (THE TAAGA JOURNAL)
-             ======================================================== */}
-          {adminTab === 'blogs' && (
-            <div className="space-y-4 max-w-6xl mx-auto">
-              
-              <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs">
-                <div>
-                  <h3 className="font-bold text-base text-[#1C1E21]">
-                    The Taaga Journal Articles ({blogs.length})
-                  </h3>
-                  <p className="text-xs text-neutral-400">
-                    Manage lookbook stories, textile craftsmanship notes, and behind-the-label editorial posts
-                  </p>
-                </div>
-                <button
-                  onClick={handleOpenAddBlog}
-                  className="px-4 py-2 bg-[#1B5E3C] hover:bg-[#15472E] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>New Story</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {blogs.map((b) => (
-                  <div 
-                    key={b.id}
-                    className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-xs flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="aspect-[4/3] rounded-xl overflow-hidden bg-[#FAF2E9] mb-3 relative">
-                        <img 
-                          src={b.imageUrl} 
-                          alt={b.title}
-                          className="w-full h-full object-cover" 
-                        />
-                        <span className="absolute top-2 left-2 bg-black/70 text-white text-[9px] px-2 py-0.5 rounded-full font-semibold uppercase">
-                          {b.category}
-                        </span>
-                      </div>
-
-                      <h4 className="font-serif text-base font-bold text-[#1C1E21] leading-snug">
-                        {b.title}
-                      </h4>
-                      <p className="text-xs text-neutral-500 font-light mt-1 line-clamp-2">
-                        {b.subtitle}
-                      </p>
-                      <span className="text-[10px] text-neutral-400 block mt-2">
-                        {b.readTime} • {b.date}
-                      </span>
-                    </div>
-
-                    <div className="pt-3 border-t border-neutral-100 flex items-center justify-end gap-2 mt-3">
-                      <button
-                        onClick={() => {
-                          setEditingBlogId(b.id);
-                          setBlogForm({
-                            title: b.title,
-                            category: b.category,
-                            subtitle: b.subtitle,
-                            readTime: b.readTime,
-                            imageUrl: b.imageUrl
-                          });
-                          setIsBlogModalOpen(true);
-                        }}
-                        className="px-3 py-1 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-lg text-xs font-medium"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (window.confirm(`Delete story "${b.title}"?`)) {
-                            saveBlogs(blogs.filter(item => item.id !== b.id));
-                            showToast('Story deleted');
-                          }
-                        }}
-                        className="p-1 text-rose-600 hover:bg-rose-50 rounded-lg"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-            </div>
-          )}
-
-          {/* ========================================================
-              TAB 7: AFFILIATE (AMBASSADOR & STYLIST PROGRAM)
-             ======================================================== */}
-          {adminTab === 'affiliate' && (
-            <div className="space-y-6 max-w-6xl mx-auto">
-              
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs">
-                <div>
-                  <h3 className="font-bold text-base text-[#1C1E21]">
-                    Stylist & Creator Affiliate Program
-                  </h3>
-                  <p className="text-xs text-neutral-400">
-                    Track referral discount codes, orders, and partner commissions
-                  </p>
-                </div>
-                <button
-                  onClick={handleOpenAddAffiliate}
-                  className="px-4 py-2 bg-[#1B5E3C] hover:bg-[#15472E] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs self-start sm:self-auto"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Partner</span>
-                </button>
-              </div>
-
-              {/* Affiliate Stats */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0]">
-                  <span className="text-[10px] text-neutral-400 uppercase font-bold tracking-wider">Active Partners</span>
-                  <div className="text-2xl font-bold text-neutral-900 mt-1">{affiliates.length}</div>
-                </div>
-                <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0]">
-                  <span className="text-[10px] text-neutral-400 uppercase font-bold tracking-wider">Total Referred Sales</span>
-                  <div className="text-2xl font-bold text-emerald-700 mt-1">
-                    ₹{affiliates.reduce((s, a) => s + a.sales, 0).toLocaleString('en-IN')}
-                  </div>
-                </div>
-                <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0]">
-                  <span className="text-[10px] text-neutral-400 uppercase font-bold tracking-wider">Commissions Accrued</span>
-                  <div className="text-2xl font-bold text-[#B65A37] mt-1">
-                    ₹{affiliates.reduce((s, a) => s + a.commission, 0).toLocaleString('en-IN')}
-                  </div>
-                </div>
-              </div>
-
-              {/* Partners Table / Cards */}
-              <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-xs space-y-3">
-                <div className="divide-y divide-neutral-100">
-                  {affiliates.map((aff) => (
-                    <div key={aff.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-neutral-900 text-sm">{aff.name}</h4>
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[10px] font-semibold">
-                            {aff.status}
-                          </span>
-                        </div>
-                        <p className="text-neutral-500 text-[11px] mt-0.5">{aff.role}</p>
-                        <span className="inline-block mt-1 font-mono font-bold text-[#B65A37] bg-[#FAF2E9] px-2 py-0.5 rounded-md">
-                          Code: {aff.code} ({aff.discount})
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-6">
-                        <div className="text-right">
-                          <span className="text-neutral-400 block text-[10px] uppercase">Orders</span>
-                          <span className="font-bold text-neutral-900">{aff.ordersCount}</span>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-neutral-400 block text-[10px] uppercase">Sales</span>
-                          <span className="font-bold text-neutral-900">₹{aff.sales.toLocaleString('en-IN')}</span>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-neutral-400 block text-[10px] uppercase">Payout</span>
-                          <span className="font-bold text-emerald-700">₹{aff.commission.toLocaleString('en-IN')}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-            </div>
-          )}
-
-          {/* ========================================================
-              TAB 8: STORE SETTINGS (EXACT MATCH TO UPLOADED CARDS)
+              TAB 6: STORE SETTINGS (EXACT MATCH TO UPLOADED CARDS)
               Excludes navbar settings & video cards as instructed
              ======================================================== */}
           {adminTab === 'settings' && (
@@ -1983,13 +1776,13 @@ export const AdminPanel = ({ onClose }) => {
                 {/* Card 1: Offers & Discounts */}
                 <div
                   onClick={() => setActiveSettingModal('offers')}
-                  className="bg-white rounded-3xl border border-[#E2E8F0] p-6 sm:p-7 hover:border-[#CBD5E1] hover:shadow-md transition-all cursor-pointer flex flex-col justify-between min-h-[190px] group"
+                  className="bg-white rounded-3xl border border-[#E2E8F0] p-6 sm:p-7 hover:border-[#B65A37]/50 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between min-h-[190px] group"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="w-12 h-12 rounded-2xl bg-[#EAF4ED] text-[#1B5E3C] flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-2xl bg-[#FAF2E9] text-[#B65A37] flex items-center justify-center">
                       <Percent className="w-6 h-6 stroke-[2.2]" />
                     </div>
-                    <ArrowUpRight className="w-5 h-5 text-neutral-400 group-hover:text-[#1B5E3C] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                    <ArrowUpRight className="w-5 h-5 text-neutral-400 group-hover:text-[#B65A37] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
                   </div>
                   <div>
                     <h3 className="font-bold text-base text-[#1C1E21]">
@@ -2004,13 +1797,13 @@ export const AdminPanel = ({ onClose }) => {
                 {/* Card 2: Hero Banner Editing */}
                 <div
                   onClick={() => setActiveSettingModal('hero')}
-                  className="bg-white rounded-3xl border border-[#E2E8F0] p-6 sm:p-7 hover:border-[#CBD5E1] hover:shadow-md transition-all cursor-pointer flex flex-col justify-between min-h-[190px] group"
+                  className="bg-white rounded-3xl border border-[#E2E8F0] p-6 sm:p-7 hover:border-[#B65A37]/50 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between min-h-[190px] group"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="w-12 h-12 rounded-2xl bg-[#EAF4ED] text-[#1B5E3C] flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-2xl bg-[#FAF2E9] text-[#B65A37] flex items-center justify-center">
                       <ImageIcon className="w-6 h-6 stroke-[2.2]" />
                     </div>
-                    <ArrowUpRight className="w-5 h-5 text-neutral-400 group-hover:text-[#1B5E3C] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                    <ArrowUpRight className="w-5 h-5 text-neutral-400 group-hover:text-[#B65A37] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
                   </div>
                   <div>
                     <h3 className="font-bold text-base text-[#1C1E21]">
@@ -2025,13 +1818,13 @@ export const AdminPanel = ({ onClose }) => {
                 {/* Card 3: Delivery & Shipping */}
                 <div
                   onClick={() => setActiveSettingModal('shipping')}
-                  className="bg-white rounded-3xl border border-[#E2E8F0] p-6 sm:p-7 hover:border-[#CBD5E1] hover:shadow-md transition-all cursor-pointer flex flex-col justify-between min-h-[190px] group"
+                  className="bg-white rounded-3xl border border-[#E2E8F0] p-6 sm:p-7 hover:border-[#B65A37]/50 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between min-h-[190px] group"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="w-12 h-12 rounded-2xl bg-[#EAF4ED] text-[#1B5E3C] flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-2xl bg-[#FAF2E9] text-[#B65A37] flex items-center justify-center">
                       <Truck className="w-6 h-6 stroke-[2.2]" />
                     </div>
-                    <ArrowUpRight className="w-5 h-5 text-neutral-400 group-hover:text-[#1B5E3C] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                    <ArrowUpRight className="w-5 h-5 text-neutral-400 group-hover:text-[#B65A37] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
                   </div>
                   <div>
                     <h3 className="font-bold text-base text-[#1C1E21]">
@@ -2046,13 +1839,13 @@ export const AdminPanel = ({ onClose }) => {
                 {/* Card 4: Password Update */}
                 <div
                   onClick={() => setActiveSettingModal('password')}
-                  className="bg-white rounded-3xl border border-[#E2E8F0] p-6 sm:p-7 hover:border-[#CBD5E1] hover:shadow-md transition-all cursor-pointer flex flex-col justify-between min-h-[190px] group"
+                  className="bg-white rounded-3xl border border-[#E2E8F0] p-6 sm:p-7 hover:border-[#B65A37]/50 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between min-h-[190px] group"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="w-12 h-12 rounded-2xl bg-[#EAF4ED] text-[#1B5E3C] flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-2xl bg-[#FAF2E9] text-[#B65A37] flex items-center justify-center">
                       <Lock className="w-6 h-6 stroke-[2.2]" />
                     </div>
-                    <ArrowUpRight className="w-5 h-5 text-neutral-400 group-hover:text-[#1B5E3C] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                    <ArrowUpRight className="w-5 h-5 text-neutral-400 group-hover:text-[#B65A37] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
                   </div>
                   <div>
                     <h3 className="font-bold text-base text-[#1C1E21]">
@@ -2076,11 +1869,11 @@ export const AdminPanel = ({ onClose }) => {
           SETTINGS MODAL: DELIVERY & SHIPPING (EXACT MATCH TO SCREENSHOT)
          ======================================================== */}
       {activeSettingModal === 'shipping' && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-neutral-200 space-y-6">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl max-w-xl w-full max-h-[88vh] sm:max-h-[85vh] flex flex-col shadow-2xl border border-neutral-200 overflow-hidden my-auto">
             
-            {/* Header */}
-            <div className="flex items-start justify-between pb-4 border-b border-neutral-100">
+            {/* Fixed Header */}
+            <div className="p-5 sm:p-6 border-b border-neutral-100 flex items-start justify-between shrink-0">
               <div>
                 <span className="text-[10px] font-sans font-bold tracking-[0.2em] uppercase text-neutral-400 block mb-1">
                   STORE SETTINGS
@@ -2098,72 +1891,84 @@ export const AdminPanel = ({ onClose }) => {
               </button>
             </div>
 
-            <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed">
-              Set your store delivery fee and free shipping conditions. These rules automatically apply to all cart totals, checkout orders, and customer announcements.
-            </p>
+            {/* Scrollable Body */}
+            <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-5">
+              <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed">
+                Set your store delivery fee and free shipping conditions. These rules automatically apply to all cart totals, checkout orders, and customer announcements.
+              </p>
 
-            <form onSubmit={handleSaveShippingSettings} className="space-y-5">
-              
-              {/* Standard delivery charge (₹) */}
-              <div>
-                <label className="block text-xs sm:text-sm font-semibold text-[#1C1E21] mb-1.5">
-                  Standard delivery charge (₹)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  required
-                  value={shippingSettings.standardCharge}
-                  onChange={(e) => setShippingSettings(prev => ({ ...prev, standardCharge: Number(e.target.value) || 0 }))}
-                  className="w-full px-4 py-3 bg-white border border-[#CBD5E1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1B5E3C]/20 focus:border-[#1B5E3C] text-[#1C1E21]"
-                />
-                <p className="text-xs text-neutral-400 mt-1.5">
-                  Fee added when order total is below the free delivery minimum.
-                </p>
-              </div>
-
-              {/* Free delivery minimum order (₹) */}
-              <div>
-                <label className="block text-xs sm:text-sm font-semibold text-[#1C1E21] mb-1.5">
-                  Free delivery minimum order (₹)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  required
-                  value={shippingSettings.freeDeliveryMin}
-                  onChange={(e) => setShippingSettings(prev => ({ ...prev, freeDeliveryMin: Number(e.target.value) || 0 }))}
-                  className="w-full px-4 py-3 bg-white border border-[#CBD5E1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1B5E3C]/20 focus:border-[#1B5E3C] text-[#1C1E21]"
-                />
-                <p className="text-xs text-neutral-400 mt-1.5">
-                  Minimum items total for free shipping. Set to 0 for free delivery on all orders.
-                </p>
-              </div>
-
-              {/* Active Rule Summary Card */}
-              <div className="p-4 sm:p-5 rounded-2xl border border-[#A7D7B5] bg-[#F2FBF5] flex items-start gap-3">
-                <Truck className="w-5 h-5 text-[#1B5E3C] shrink-0 mt-0.5" />
+              <form id="shippingSettingsForm" onSubmit={handleSaveShippingSettings} className="space-y-5">
+                
+                {/* Standard delivery charge (₹) */}
                 <div>
-                  <h4 className="font-bold text-xs sm:text-sm text-[#1B5E3C]">
-                    Active Rule Summary
-                  </h4>
-                  <p className="text-xs text-neutral-600 mt-1 leading-relaxed">
-                    Orders under ₹{shippingSettings.freeDeliveryMin.toLocaleString('en-IN')} pay ₹{shippingSettings.standardCharge} delivery. Orders ₹{shippingSettings.freeDeliveryMin.toLocaleString('en-IN')} and above qualify for FREE delivery.
+                  <label className="block text-xs sm:text-sm font-semibold text-[#1C1E21] mb-1.5">
+                    Standard delivery charge (₹)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    value={shippingSettings.standardCharge}
+                    onChange={(e) => setShippingSettings(prev => ({ ...prev, standardCharge: Number(e.target.value) || 0 }))}
+                    className="w-full px-4 py-3 bg-white border border-[#CBD5E1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37] text-[#1C1E21]"
+                  />
+                  <p className="text-xs text-neutral-400 mt-1.5">
+                    Fee added when order total is below the free delivery minimum.
                   </p>
                 </div>
-              </div>
 
-              {/* Action */}
-              <div className="flex items-center justify-end pt-4 border-t border-neutral-100">
-                <button
-                  type="submit"
-                  className="px-6 py-3 bg-[#1B5E3C] hover:bg-[#15472E] text-white rounded-xl text-xs sm:text-sm font-semibold shadow-xs transition-colors cursor-pointer"
-                >
-                  Save delivery settings
-                </button>
-              </div>
+                {/* Free delivery minimum order (₹) */}
+                <div>
+                  <label className="block text-xs sm:text-sm font-semibold text-[#1C1E21] mb-1.5">
+                    Free delivery minimum order (₹)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    value={shippingSettings.freeDeliveryMin}
+                    onChange={(e) => setShippingSettings(prev => ({ ...prev, freeDeliveryMin: Number(e.target.value) || 0 }))}
+                    className="w-full px-4 py-3 bg-white border border-[#CBD5E1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37] text-[#1C1E21]"
+                  />
+                  <p className="text-xs text-neutral-400 mt-1.5">
+                    Minimum items total for free shipping. Set to 0 for free delivery on all orders.
+                  </p>
+                </div>
 
-            </form>
+                {/* Active Rule Summary Card */}
+                <div className="p-4 sm:p-5 rounded-2xl border border-[#E8D9C8] bg-[#FFF9F2] flex items-start gap-3">
+                  <Truck className="w-5 h-5 text-[#B65A37] shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-bold text-xs sm:text-sm text-[#B65A37]">
+                      Active Rule Summary
+                    </h4>
+                    <p className="text-xs text-neutral-600 mt-1 leading-relaxed">
+                      Orders under ₹{shippingSettings.freeDeliveryMin.toLocaleString('en-IN')} pay ₹{shippingSettings.standardCharge} delivery. Orders ₹{shippingSettings.freeDeliveryMin.toLocaleString('en-IN')} and above qualify for FREE delivery.
+                    </p>
+                  </div>
+                </div>
+
+              </form>
+            </div>
+
+            {/* Fixed Footer */}
+            <div className="p-4 sm:p-5 border-t border-neutral-100 bg-neutral-50/50 flex items-center justify-end gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setActiveSettingModal(null)}
+                className="px-4 py-2.5 rounded-xl border border-neutral-200 text-xs font-semibold text-neutral-600 hover:bg-neutral-100 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="shippingSettingsForm"
+                className="px-6 py-2.5 bg-[#B65A37] hover:bg-[#A7472B] active:bg-[#8C3E20] text-white rounded-xl text-xs sm:text-sm font-semibold shadow-xs transition-colors cursor-pointer"
+              >
+                Save delivery settings
+              </button>
+            </div>
+
           </div>
         </div>
       )}
@@ -2172,11 +1977,11 @@ export const AdminPanel = ({ onClose }) => {
           SETTINGS MODAL: OFFERS & DISCOUNTS (EXACT MATCH TO SCREENSHOT)
          ======================================================== */}
       {activeSettingModal === 'offers' && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-neutral-200 space-y-6 my-8">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[88vh] sm:max-h-[85vh] flex flex-col shadow-2xl border border-neutral-200 overflow-hidden my-auto">
             
-            {/* Header */}
-            <div className="flex items-start justify-between pb-4 border-b border-neutral-100">
+            {/* Fixed Header */}
+            <div className="p-5 sm:p-6 border-b border-neutral-100 flex items-start justify-between shrink-0">
               <div>
                 <span className="text-[10px] font-sans font-bold tracking-[0.2em] uppercase text-neutral-400 block mb-1">
                   STORE SETTINGS
@@ -2194,238 +1999,250 @@ export const AdminPanel = ({ onClose }) => {
               </button>
             </div>
 
-            <form onSubmit={handleSaveOffersSettings} className="space-y-6">
-              
-              {/* Section 1: Announcement Bar Header */}
-              <div className="p-5 rounded-2xl border border-[#CBD5E1] bg-white space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-[#EAF4ED] text-[#1B5E3C] flex items-center justify-center shrink-0">
-                    <Tag className="w-4 h-4" />
+            {/* Scrollable Body */}
+            <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-6">
+              <form id="offersSettingsForm" onSubmit={handleSaveOffersSettings} className="space-y-6">
+                
+                {/* Section 1: Announcement Bar Header */}
+                <div className="p-5 rounded-2xl border border-[#CBD5E1] bg-white space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-[#FAF2E9] text-[#B65A37] flex items-center justify-center shrink-0">
+                      <Tag className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-[#1C1E21]">
+                        Announcement Bar Header
+                      </h4>
+                      <p className="text-xs text-neutral-400 mt-0.5">
+                        Customize the banner message shown at the top of every page.
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-bold text-sm text-[#1C1E21]">
-                      Announcement Bar Header
-                    </h4>
-                    <p className="text-xs text-neutral-400 mt-0.5">
-                      Customize the banner message shown at the top of every page.
-                    </p>
-                  </div>
-                </div>
 
-                <div className="flex items-center justify-between pt-2">
-                  <div>
-                    <span className="text-xs font-semibold text-[#1C1E21] block">
-                      Show Announcement Bar
-                    </span>
-                    <span className="text-[11px] text-neutral-400">
-                      Toggle the top announcement bar visible on the storefront.
-                    </span>
+                  <div className="flex items-center justify-between pt-2">
+                    <div>
+                      <span className="text-xs font-semibold text-[#1C1E21] block">
+                        Show Announcement Bar
+                      </span>
+                      <span className="text-[11px] text-neutral-400">
+                        Toggle the top announcement bar visible on the storefront.
+                      </span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={offersSettings.showAnnouncement} 
+                        onChange={(e) => setOffersSettings(prev => ({ ...prev, showAnnouncement: e.target.checked }))} 
+                        className="sr-only peer" 
+                      />
+                      <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#B65A37]"></div>
+                    </label>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={offersSettings.showAnnouncement} 
-                      onChange={(e) => setOffersSettings(prev => ({ ...prev, showAnnouncement: e.target.checked }))} 
-                      className="sr-only peer" 
-                    />
-                    <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#1B5E3C]"></div>
-                  </label>
-                </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-[#1C1E21] mb-1.5">
-                    Announcement Message
-                  </label>
-                  <input
-                    type="text"
-                    value={offersSettings.announcementMessage}
-                    onChange={(e) => setOffersSettings(prev => ({ ...prev, announcementMessage: e.target.value }))}
-                    placeholder="Special Offer: Free shipping on orders above ₹3,999! 🌿"
-                    className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#1B5E3C]/20 focus:border-[#1B5E3C]"
-                  />
-                  <p className="text-[11px] text-neutral-400 mt-1">
-                    Displayed prominently at the very top of the store.
-                  </p>
-                </div>
-              </div>
-
-              {/* Section 2: Automatic Discount Rule */}
-              <div className="p-5 rounded-2xl border border-[#CBD5E1] bg-white space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-[#EAF4ED] text-[#1B5E3C] flex items-center justify-center shrink-0">
-                    <Percent className="w-4 h-4" />
-                  </div>
                   <div>
-                    <h4 className="font-bold text-sm text-[#1C1E21]">
-                      Automatic Discount Rule
-                    </h4>
-                    <p className="text-xs text-neutral-400 mt-0.5">
-                      Configure automatic discounts applied to the customer's cart and checkout.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-2">
-                  <div>
-                    <span className="text-xs font-semibold text-[#1C1E21] block">
-                      Enable Automatic Discount
-                    </span>
-                    <span className="text-[11px] text-neutral-400">
-                      When enabled, qualifying orders automatically receive this discount.
-                    </span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={offersSettings.enableDiscount} 
-                      onChange={(e) => setOffersSettings(prev => ({ ...prev, enableDiscount: e.target.checked }))} 
-                      className="sr-only peer" 
-                    />
-                    <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#1B5E3C]"></div>
-                  </label>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                  <div>
-                    <label className="block text-xs font-semibold text-[#1C1E21] mb-1">
-                      Offer Title
+                    <label className="block text-xs font-semibold text-[#1C1E21] mb-1.5">
+                      Announcement Message
                     </label>
                     <input
                       type="text"
-                      value={offersSettings.offerTitle}
-                      onChange={(e) => setOffersSettings(prev => ({ ...prev, offerTitle: e.target.value }))}
-                      placeholder="Festive Celebration"
-                      className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm"
+                      value={offersSettings.announcementMessage}
+                      onChange={(e) => setOffersSettings(prev => ({ ...prev, announcementMessage: e.target.value }))}
+                      placeholder="Special Offer: Free shipping on orders above ₹3,999! 🌿"
+                      className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[#1C1E21] mb-1">
-                      Discount Type
-                    </label>
-                    <select
-                      value={offersSettings.discountType}
-                      onChange={(e) => setOffersSettings(prev => ({ ...prev, discountType: e.target.value }))}
-                      className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm"
-                    >
-                      <option value="percentage">Percentage (%)</option>
-                      <option value="fixed">Fixed Amount (₹)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-[#1C1E21] mb-1">
-                      Discount Percentage (%)
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="100"
-                      value={offersSettings.discountPercentage}
-                      onChange={(e) => setOffersSettings(prev => ({ ...prev, discountPercentage: Number(e.target.value) || 0 }))}
-                      className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[#1C1E21] mb-1">
-                      Min Order Subtotal (₹)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={offersSettings.minOrderSubtotal}
-                      onChange={(e) => setOffersSettings(prev => ({ ...prev, minOrderSubtotal: Number(e.target.value) || 0 }))}
-                      className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[#1C1E21] mb-1">
-                      Max Cap (₹, optional)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={offersSettings.maxCap}
-                      onChange={(e) => setOffersSettings(prev => ({ ...prev, maxCap: Number(e.target.value) || 0 }))}
-                      placeholder="350"
-                      className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Section 3: Conversion Nudge Banner */}
-              <div className="p-5 rounded-2xl border border-[#CBD5E1] bg-white space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-[#EAF4ED] text-[#1B5E3C] flex items-center justify-center shrink-0">
-                    <Gift className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-sm text-[#1C1E21]">
-                      Conversion Nudge Banner
-                    </h4>
-                    <p className="text-xs text-neutral-400 mt-0.5">
-                      Show a motivating progress banner when the customer reaches 51% of the discount threshold.
+                    <p className="text-[11px] text-neutral-400 mt-1">
+                      Displayed prominently at the very top of the store.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-2">
-                  <div>
-                    <span className="text-xs font-semibold text-[#1C1E21] block">
-                      Enable 51% Near-Threshold Nudge Banner
-                    </span>
-                    <span className="text-[11px] text-neutral-400">
-                      Displays an encouraging progress banner in the cart and checkout urging customers to add more items.
-                    </span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={offersSettings.enableNudgeBanner} 
-                      onChange={(e) => setOffersSettings(prev => ({ ...prev, enableNudgeBanner: e.target.checked }))} 
-                      className="sr-only peer" 
-                    />
-                    <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#1B5E3C]"></div>
-                  </label>
-                </div>
-
-                {/* Banner Preview */}
-                <div className="p-4 rounded-xl border border-dashed border-[#A7D7B5] bg-[#F2FBF5] space-y-2">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-500 font-semibold block">
-                    CUSTOMER BANNER PREVIEW (WHEN 51%+ OF THRESHOLD)
-                  </span>
-                  <div className="bg-white p-3.5 rounded-xl border border-neutral-200 shadow-2xs">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-neutral-900">
-                        🎉 Almost There!
-                      </span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                        {offersSettings.discountPercentage}% OFF
-                      </span>
+                {/* Section 2: Automatic Discount Rule */}
+                <div className="p-5 rounded-2xl border border-[#CBD5E1] bg-white space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-[#FAF2E9] text-[#B65A37] flex items-center justify-center shrink-0">
+                      <Percent className="w-4 h-4" />
                     </div>
-                    <p className="text-xs text-neutral-600 mt-1">
-                      Add just ₹350 more to unlock {offersSettings.discountPercentage}% OFF on your order!
-                    </p>
-                    <div className="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden mt-2">
-                      <div className="w-3/5 h-full bg-[#1B5E3C] rounded-full"></div>
+                    <div>
+                      <h4 className="font-bold text-sm text-[#1C1E21]">
+                        Automatic Discount Rule
+                      </h4>
+                      <p className="text-xs text-neutral-400 mt-0.5">
+                        Configure automatic discounts applied to the customer's cart and checkout.
+                      </p>
                     </div>
                   </div>
+
+                  <div className="flex items-center justify-between pt-2">
+                    <div>
+                      <span className="text-xs font-semibold text-[#1C1E21] block">
+                        Enable Automatic Discount
+                      </span>
+                      <span className="text-[11px] text-neutral-400">
+                        When enabled, qualifying orders automatically receive this discount.
+                      </span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={offersSettings.enableDiscount} 
+                        onChange={(e) => setOffersSettings(prev => ({ ...prev, enableDiscount: e.target.checked }))} 
+                        className="sr-only peer" 
+                      />
+                      <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#B65A37]"></div>
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#1C1E21] mb-1">
+                        Offer Title
+                      </label>
+                      <input
+                        type="text"
+                        value={offersSettings.offerTitle}
+                        onChange={(e) => setOffersSettings(prev => ({ ...prev, offerTitle: e.target.value }))}
+                        placeholder="Festive Celebration"
+                        className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#1C1E21] mb-1">
+                        Discount Type
+                      </label>
+                      <select
+                        value={offersSettings.discountType}
+                        onChange={(e) => setOffersSettings(prev => ({ ...prev, discountType: e.target.value }))}
+                        className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm"
+                      >
+                        <option value="percentage">Percentage (%)</option>
+                        <option value="fixed">Fixed Amount (₹)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#1C1E21] mb-1">
+                        Discount Percentage (%)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="100"
+                        value={offersSettings.discountPercentage}
+                        onChange={(e) => setOffersSettings(prev => ({ ...prev, discountPercentage: Number(e.target.value) || 0 }))}
+                        className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#1C1E21] mb-1">
+                        Min Order Subtotal (₹)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={offersSettings.minOrderSubtotal}
+                        onChange={(e) => setOffersSettings(prev => ({ ...prev, minOrderSubtotal: Number(e.target.value) || 0 }))}
+                        className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#1C1E21] mb-1">
+                        Max Cap (₹, optional)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={offersSettings.maxCap}
+                        onChange={(e) => setOffersSettings(prev => ({ ...prev, maxCap: Number(e.target.value) || 0 }))}
+                        placeholder="350"
+                        className="w-full px-3.5 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              {/* Action */}
-              <div className="flex items-center justify-end pt-4 border-t border-neutral-100">
-                <button
-                  type="submit"
-                  className="px-6 py-3 bg-[#1B5E3C] hover:bg-[#15472E] text-white rounded-xl text-xs sm:text-sm font-semibold shadow-xs transition-colors cursor-pointer"
-                >
-                  Save discount settings
-                </button>
-              </div>
+                {/* Section 3: Conversion Nudge Banner */}
+                <div className="p-5 rounded-2xl border border-[#CBD5E1] bg-white space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-[#FAF2E9] text-[#B65A37] flex items-center justify-center shrink-0">
+                      <Gift className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-[#1C1E21]">
+                        Conversion Nudge Banner
+                      </h4>
+                      <p className="text-xs text-neutral-400 mt-0.5">
+                        Show a motivating progress banner when the customer reaches 51% of the discount threshold.
+                      </p>
+                    </div>
+                  </div>
 
-            </form>
+                  <div className="flex items-center justify-between pt-2">
+                    <div>
+                      <span className="text-xs font-semibold text-[#1C1E21] block">
+                        Enable 51% Near-Threshold Nudge Banner
+                      </span>
+                      <span className="text-[11px] text-neutral-400">
+                        Displays an encouraging progress banner in the cart and checkout urging customers to add more items.
+                      </span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={offersSettings.enableNudgeBanner} 
+                        onChange={(e) => setOffersSettings(prev => ({ ...prev, enableNudgeBanner: e.target.checked }))} 
+                        className="sr-only peer" 
+                      />
+                      <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#B65A37]"></div>
+                    </label>
+                  </div>
+
+                  {/* Banner Preview */}
+                  <div className="p-4 rounded-xl border border-dashed border-[#E8D9C8] bg-[#FFF9F2] space-y-2">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-500 font-semibold block">
+                      CUSTOMER BANNER PREVIEW (WHEN 51%+ OF THRESHOLD)
+                    </span>
+                    <div className="bg-white p-3.5 rounded-xl border border-neutral-200 shadow-2xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-neutral-900">
+                          🎉 Almost There!
+                        </span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FAF2E9] text-[#B65A37]">
+                          {offersSettings.discountPercentage}% OFF
+                        </span>
+                      </div>
+                      <p className="text-xs text-neutral-600 mt-1">
+                        Add just ₹350 more to unlock {offersSettings.discountPercentage}% OFF on your order!
+                      </p>
+                      <div className="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden mt-2">
+                        <div className="w-3/5 h-full bg-[#B65A37] rounded-full"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </form>
+            </div>
+
+            {/* Fixed Footer */}
+            <div className="p-4 sm:p-5 border-t border-neutral-100 bg-neutral-50/50 flex items-center justify-end gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setActiveSettingModal(null)}
+                className="px-4 py-2.5 rounded-xl border border-neutral-200 text-xs font-semibold text-neutral-600 hover:bg-neutral-100 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="offersSettingsForm"
+                className="px-6 py-2.5 bg-[#B65A37] hover:bg-[#A7472B] active:bg-[#8C3E20] text-white rounded-xl text-xs sm:text-sm font-semibold shadow-xs transition-colors cursor-pointer"
+              >
+                Save discount settings
+              </button>
+            </div>
+
           </div>
         </div>
       )}
@@ -2434,11 +2251,11 @@ export const AdminPanel = ({ onClose }) => {
           SETTINGS MODAL: HERO BANNER EDITING (EXACT MATCH TO SCREENSHOT)
          ======================================================== */}
       {activeSettingModal === 'hero' && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl border border-neutral-200 space-y-6 my-8">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[88vh] sm:max-h-[85vh] flex flex-col shadow-2xl border border-neutral-200 overflow-hidden my-auto">
             
-            {/* Header */}
-            <div className="flex items-start justify-between pb-4 border-b border-neutral-100">
+            {/* Fixed Header */}
+            <div className="p-5 sm:p-6 border-b border-neutral-100 flex items-start justify-between shrink-0">
               <div>
                 <span className="text-[10px] font-sans font-bold tracking-[0.2em] uppercase text-neutral-400 block mb-1">
                   STORE SETTINGS
@@ -2456,185 +2273,223 @@ export const AdminPanel = ({ onClose }) => {
               </button>
             </div>
 
-            <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed">
-              Configure dynamic hero banners with separate mobile and desktop uploads, plus scrolling tickers.
-            </p>
+            {/* Scrollable Body */}
+            <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-6">
+              <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed">
+                Configure dynamic hero banners with separate mobile and desktop uploads, plus scrolling tickers.
+              </p>
 
-            <form onSubmit={handleSaveHeroSettings} className="space-y-6">
-              
-              {/* Card 1: Mobile Hero Banners */}
-              <div className="p-5 rounded-2xl border border-[#CBD5E1] bg-white space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Smartphone className="w-4 h-4 text-neutral-600" />
-                    <h4 className="font-bold text-sm text-[#1C1E21]">
-                      1. Mobile Hero Banners
-                    </h4>
+              <form id="heroSettingsForm" onSubmit={handleSaveHeroSettings} className="space-y-6">
+                
+                {/* Card 1: Mobile Hero Banners */}
+                <div className="p-5 rounded-2xl border border-[#CBD5E1] bg-white space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Smartphone className="w-4 h-4 text-neutral-600" />
+                      <h4 className="font-bold text-sm text-[#1C1E21]">
+                        1. Mobile Hero Banners
+                      </h4>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FAF2E9] text-[#B65A37] border border-[#E8D9C8]">
+                      Visible on Mobile Screen (&lt; 768px)
+                    </span>
                   </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                    Visible on Mobile Screen (&lt; 768px)
-                  </span>
+                  <p className="text-xs text-neutral-400">
+                    Upload up to 5 images displayed on mobile phones and small screens. Recommended aspect ratio: 4:3, 1:1, or 9:16 portrait/square banners (e.g. 1080×1080 or 1080×1350).
+                  </p>
+
+                  {/* Uploaded List or Empty Message */}
+                  {heroSettings.mobileBanners.length === 0 ? (
+                    <div className="p-3.5 rounded-xl border border-dashed border-neutral-200 text-center text-xs text-neutral-400">
+                      No mobile banners added yet. If left empty, desktop banners will automatically be displayed on mobile devices as a fallback.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-2">
+                      {heroSettings.mobileBanners.map((img, idx) => (
+                        <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-neutral-200 group">
+                          <img src={img} alt={`Mobile Banner ${idx}`} className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setHeroSettings(prev => ({ ...prev, mobileBanners: prev.mobileBanners.filter((_, i) => i !== idx) }))}
+                            className="absolute top-1 right-1 p-1 bg-rose-600 text-white rounded-full opacity-80 hover:opacity-100 cursor-pointer"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Upload Box with Drag & Drop */}
+                  <input 
+                    type="file" 
+                    ref={heroMobileInputRef} 
+                    onChange={handleMobileBannerUpload} 
+                    accept="image/*" 
+                    multiple 
+                    className="hidden" 
+                  />
+                  <div
+                    onClick={() => heroMobileInputRef.current?.click()}
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDrop={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const files = Array.from(e.dataTransfer?.files || []).filter(f => f.type.startsWith('image/'));
+                      for (const f of files.slice(0, 5)) {
+                        try {
+                          const url = await compressImage(f);
+                          setHeroSettings(prev => ({ ...prev, mobileBanners: [...prev.mobileBanners, url] }));
+                        } catch (err) {}
+                      }
+                      showToast('Mobile banner(s) dropped & uploaded');
+                    }}
+                    className="p-6 rounded-2xl border-2 border-dashed border-[#E8D9C8] hover:border-[#B65A37] hover:bg-[#FAF2E9]/40 text-center cursor-pointer transition-colors"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-[#FAF2E9] text-[#B65A37] flex items-center justify-center mx-auto mb-2">
+                      <Upload className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs font-bold text-neutral-800 block">
+                      Upload Mobile Banners (Click or Drag &amp; Drop)
+                    </span>
+                    <span className="text-[11px] text-neutral-400 mt-1 block">
+                      Select up to 5 JPG, PNG or WebP images optimized for smartphone screens.
+                    </span>
+                  </div>
                 </div>
-                <p className="text-xs text-neutral-400">
-                  Upload up to 5 images displayed on mobile phones and small screens. Recommended aspect ratio: 4:3, 1:1, or 9:16 portrait/square banners (e.g. 1080×1080 or 1080×1350).
-                </p>
 
-                {/* Uploaded List or Empty Message */}
-                {heroSettings.mobileBanners.length === 0 ? (
-                  <div className="p-3.5 rounded-xl border border-dashed border-neutral-200 text-center text-xs text-neutral-400">
-                    No mobile banners added yet. If left empty, desktop banners will automatically be displayed on mobile devices as a fallback.
+                {/* Card 2: Desktop Hero Banners */}
+                <div className="p-5 rounded-2xl border border-[#CBD5E1] bg-white space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Monitor className="w-4 h-4 text-neutral-600" />
+                      <h4 className="font-bold text-sm text-[#1C1E21]">
+                        2. Desktop Hero Banners
+                      </h4>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FAF2E9] text-[#B65A37] border border-[#E8D9C8]">
+                      Visible on Desktop &amp; Tablet (≥ 768px)
+                    </span>
                   </div>
-                ) : (
-                  <div className="grid grid-cols-4 gap-2">
-                    {heroSettings.mobileBanners.map((img, idx) => (
-                      <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-neutral-200 group">
-                        <img src={img} alt={`Mobile Banner ${idx}`} className="w-full h-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => setHeroSettings(prev => ({ ...prev, mobileBanners: prev.mobileBanners.filter((_, i) => i !== idx) }))}
-                          className="absolute top-1 right-1 p-1 bg-rose-600 text-white rounded-full opacity-80 hover:opacity-100 cursor-pointer"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                  <p className="text-xs text-neutral-400">
+                    Upload up to 5 images displayed on desktop monitors, laptops, and tablets. Covers the full width in desktop view. Recommended aspect ratio: 16:9, 21:9, or panoramic landscape (e.g. 1920×600 or 1920×820).
+                  </p>
 
-                {/* Upload Box */}
-                <input 
-                  type="file" 
-                  ref={heroMobileInputRef} 
-                  onChange={handleMobileBannerUpload} 
-                  accept="image/*" 
-                  multiple 
-                  className="hidden" 
-                />
-                <div
-                  onClick={() => heroMobileInputRef.current?.click()}
-                  className="p-6 rounded-2xl border-2 border-dashed border-[#A7D7B5] hover:bg-[#F2FBF5] text-center cursor-pointer transition-colors"
-                >
-                  <div className="w-10 h-10 rounded-full bg-[#EAF4ED] text-[#1B5E3C] flex items-center justify-center mx-auto mb-2">
-                    <Upload className="w-5 h-5" />
+                  {/* Desktop Banners list */}
+                  {heroSettings.desktopBanners.length === 0 ? (
+                    <div className="p-3.5 rounded-xl border border-dashed border-neutral-200 text-center text-xs text-neutral-400">
+                      No desktop banners added yet. Click "Upload Desktop Banners" below to add your first banner.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {heroSettings.desktopBanners.map((img, idx) => (
+                        <div key={idx} className="relative aspect-[16/9] rounded-xl overflow-hidden border border-neutral-200 group">
+                          <img src={img} alt={`Desktop Banner ${idx}`} className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setHeroSettings(prev => ({ ...prev, desktopBanners: prev.desktopBanners.filter((_, i) => i !== idx) }))}
+                            className="absolute top-1.5 right-1.5 p-1 bg-rose-600 text-white rounded-full opacity-80 hover:opacity-100 cursor-pointer"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Upload Box with Drag & Drop */}
+                  <input 
+                    type="file" 
+                    ref={heroDesktopInputRef} 
+                    onChange={handleDesktopBannerUpload} 
+                    accept="image/*" 
+                    multiple 
+                    className="hidden" 
+                  />
+                  <div
+                    onClick={() => heroDesktopInputRef.current?.click()}
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDrop={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const files = Array.from(e.dataTransfer?.files || []).filter(f => f.type.startsWith('image/'));
+                      for (const f of files.slice(0, 5)) {
+                        try {
+                          const url = await compressImage(f);
+                          setHeroSettings(prev => ({ ...prev, desktopBanners: [...prev.desktopBanners, url] }));
+                        } catch (err) {}
+                      }
+                      showToast('Desktop banner(s) dropped & uploaded');
+                    }}
+                    className="p-6 rounded-2xl border-2 border-dashed border-[#E8D9C8] hover:border-[#B65A37] hover:bg-[#FAF2E9]/40 text-center cursor-pointer transition-colors"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-[#FAF2E9] text-[#B65A37] flex items-center justify-center mx-auto mb-2">
+                      <Upload className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs font-bold text-neutral-800 block">
+                      Upload Desktop Banners (Click or Drag &amp; Drop)
+                    </span>
+                    <span className="text-[11px] text-neutral-400 mt-1 block">
+                      Select up to 5 widescreen JPG, PNG or WebP images spanning the full width of desktop screens.
+                    </span>
                   </div>
-                  <span className="text-xs font-bold text-neutral-800 block">
-                    Upload Mobile Banners (Click or Drag &amp; Drop)
-                  </span>
-                  <span className="text-[11px] text-neutral-400 mt-1 block">
-                    Select up to 5 JPG, PNG or WebP images optimized for smartphone screens.
-                  </span>
                 </div>
-              </div>
 
-              {/* Card 2: Desktop Hero Banners */}
-              <div className="p-5 rounded-2xl border border-[#CBD5E1] bg-white space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Monitor className="w-4 h-4 text-neutral-600" />
-                    <h4 className="font-bold text-sm text-[#1C1E21]">
-                      2. Desktop Hero Banners
-                    </h4>
-                  </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                    Visible on Desktop &amp; Tablet (≥ 768px)
-                  </span>
+                {/* Section 3: Below Ticker Text */}
+                <div className="space-y-1.5">
+                  <h4 className="font-bold text-sm text-[#1C1E21]">Below Ticker Text</h4>
+                  <p className="text-xs text-neutral-400">
+                    The scrolling marquee notice displayed right underneath the hero banner.
+                  </p>
+                  <label className="block text-xs font-semibold text-[#1C1E21] pt-1">
+                    Below ticker notice
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={heroSettings.belowTicker}
+                    onChange={(e) => setHeroSettings(prev => ({ ...prev, belowTicker: e.target.value }))}
+                    className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
+                  />
                 </div>
-                <p className="text-xs text-neutral-400">
-                  Upload up to 5 images displayed on desktop monitors, laptops, and tablets. Covers the full width in desktop view. Recommended aspect ratio: 16:9, 21:9, or panoramic landscape (e.g. 1920×600 or 1920×820).
-                </p>
 
-                {/* Desktop Banners list */}
-                {heroSettings.desktopBanners.length === 0 ? (
-                  <div className="p-3.5 rounded-xl border border-dashed border-neutral-200 text-center text-xs text-neutral-400">
-                    No desktop banners added yet. Click "Upload Desktop Banners" below to add your first banner.
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {heroSettings.desktopBanners.map((img, idx) => (
-                      <div key={idx} className="relative aspect-[16/9] rounded-xl overflow-hidden border border-neutral-200 group">
-                        <img src={img} alt={`Desktop Banner ${idx}`} className="w-full h-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => setHeroSettings(prev => ({ ...prev, desktopBanners: prev.desktopBanners.filter((_, i) => i !== idx) }))}
-                          className="absolute top-1.5 right-1.5 p-1 bg-rose-600 text-white rounded-full opacity-80 hover:opacity-100 cursor-pointer"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Upload Box */}
-                <input 
-                  type="file" 
-                  ref={heroDesktopInputRef} 
-                  onChange={handleDesktopBannerUpload} 
-                  accept="image/*" 
-                  multiple 
-                  className="hidden" 
-                />
-                <div
-                  onClick={() => heroDesktopInputRef.current?.click()}
-                  className="p-6 rounded-2xl border-2 border-dashed border-[#A7D7B5] hover:bg-[#F2FBF5] text-center cursor-pointer transition-colors"
-                >
-                  <div className="w-10 h-10 rounded-full bg-[#EAF4ED] text-[#1B5E3C] flex items-center justify-center mx-auto mb-2">
-                    <Upload className="w-5 h-5" />
-                  </div>
-                  <span className="text-xs font-bold text-neutral-800 block">
-                    Upload Desktop Banners (Click or Drag &amp; Drop)
-                  </span>
-                  <span className="text-[11px] text-neutral-400 mt-1 block">
-                    Select up to 5 widescreen JPG, PNG or WebP images spanning the full width of desktop screens.
-                  </span>
+                {/* Section 4: End Ticker Text */}
+                <div className="space-y-1.5">
+                  <h4 className="font-bold text-sm text-[#1C1E21]">End Ticker Text</h4>
+                  <p className="text-xs text-neutral-400">
+                    The scrolling packing and order preparation notice displayed near the bottom of the page.
+                  </p>
+                  <label className="block text-xs font-semibold text-[#1C1E21] pt-1">
+                    End ticker notice
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={heroSettings.endTicker}
+                    onChange={(e) => setHeroSettings(prev => ({ ...prev, endTicker: e.target.value }))}
+                    className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
+                  />
                 </div>
-              </div>
 
-              {/* Section 3: Below Ticker Text */}
-              <div className="space-y-1.5">
-                <h4 className="font-bold text-sm text-[#1C1E21]">Below Ticker Text</h4>
-                <p className="text-xs text-neutral-400">
-                  The scrolling marquee notice displayed right underneath the hero banner.
-                </p>
-                <label className="block text-xs font-semibold text-[#1C1E21] pt-1">
-                  Below ticker notice
-                </label>
-                <textarea
-                  rows={2}
-                  value={heroSettings.belowTicker}
-                  onChange={(e) => setHeroSettings(prev => ({ ...prev, belowTicker: e.target.value }))}
-                  className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm resize-none"
-                />
-              </div>
+              </form>
+            </div>
 
-              {/* Section 4: End Ticker Text */}
-              <div className="space-y-1.5">
-                <h4 className="font-bold text-sm text-[#1C1E21]">End Ticker Text</h4>
-                <p className="text-xs text-neutral-400">
-                  The scrolling packing and order preparation notice displayed near the bottom of the page.
-                </p>
-                <label className="block text-xs font-semibold text-[#1C1E21] pt-1">
-                  End ticker notice
-                </label>
-                <textarea
-                  rows={2}
-                  value={heroSettings.endTicker}
-                  onChange={(e) => setHeroSettings(prev => ({ ...prev, endTicker: e.target.value }))}
-                  className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm resize-none"
-                />
-              </div>
+            {/* Fixed Footer */}
+            <div className="p-4 sm:p-5 border-t border-neutral-100 bg-neutral-50/50 flex items-center justify-end gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setActiveSettingModal(null)}
+                className="px-4 py-2.5 rounded-xl border border-neutral-200 text-xs font-semibold text-neutral-600 hover:bg-neutral-100 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="heroSettingsForm"
+                className="px-6 py-2.5 bg-[#B65A37] hover:bg-[#A7472B] active:bg-[#8C3E20] text-white rounded-xl text-xs sm:text-sm font-semibold shadow-xs transition-colors cursor-pointer"
+              >
+                Save settings
+              </button>
+            </div>
 
-              {/* Action */}
-              <div className="flex items-center justify-end pt-4 border-t border-neutral-100">
-                <button
-                  type="submit"
-                  className="px-6 py-3 bg-[#1B5E3C] hover:bg-[#15472E] text-white rounded-xl text-xs sm:text-sm font-semibold shadow-xs transition-colors cursor-pointer"
-                >
-                  Save settings
-                </button>
-              </div>
-
-            </form>
           </div>
         </div>
       )}
@@ -2643,11 +2498,11 @@ export const AdminPanel = ({ onClose }) => {
           SETTINGS MODAL: PASSWORD UPDATE
          ======================================================== */}
       {activeSettingModal === 'password' && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-neutral-200 space-y-6">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full max-h-[88vh] sm:max-h-[85vh] flex flex-col shadow-2xl border border-neutral-200 overflow-hidden my-auto">
             
-            {/* Header */}
-            <div className="flex items-start justify-between pb-4 border-b border-neutral-100">
+            {/* Fixed Header */}
+            <div className="p-5 sm:p-6 border-b border-neutral-100 flex items-start justify-between shrink-0">
               <div>
                 <span className="text-[10px] font-sans font-bold tracking-[0.2em] uppercase text-neutral-400 block mb-1">
                   STORE SETTINGS
@@ -2665,111 +2520,116 @@ export const AdminPanel = ({ onClose }) => {
               </button>
             </div>
 
-            <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed">
-              Update the master cryptographic password used to unlock this admin panel.
-            </p>
+            {/* Scrollable Body */}
+            <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-4">
+              <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed">
+                Update the master cryptographic password used to unlock this admin panel.
+              </p>
 
-            <form onSubmit={handleChangePassword} className="space-y-4 text-xs">
-              {passFeedback && (
-                <div className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
-                  passFeedback.type === 'success' 
-                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' 
-                    : 'bg-rose-50 text-rose-800 border border-rose-200'
-                }`}>
-                  {passFeedback.type === 'success' ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  ) : (
-                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-                  )}
-                  <span>{passFeedback.message}</span>
+              <form id="passwordSettingsForm" onSubmit={handleChangePassword} className="space-y-4 text-xs">
+                {passFeedback && (
+                  <div className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
+                    passFeedback.type === 'success' 
+                      ? 'bg-[#FAF2E9] text-[#B65A37] border border-[#E8D9C8]' 
+                      : 'bg-rose-50 text-rose-800 border border-rose-200'
+                  }`}>
+                    {passFeedback.type === 'success' ? (
+                      <CheckCircle2 className="w-4 h-4 text-[#B65A37] shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                    )}
+                    <span>{passFeedback.message}</span>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-neutral-700 font-semibold mb-1">
+                    Current Password *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showCurrentPass ? 'text' : 'password'}
+                      required
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="Current password"
+                      className="w-full pl-3.5 pr-10 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm text-[#1C1E21] focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPass(!showCurrentPass)}
+                      className="absolute right-3 top-3 text-neutral-400 hover:text-neutral-600 cursor-pointer"
+                    >
+                      {showCurrentPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
-              )}
 
-              <div>
-                <label className="block text-neutral-700 font-semibold mb-1">
-                  Current Password *
-                </label>
-                <div className="relative">
+                <div>
+                  <label className="block text-neutral-700 font-semibold mb-1">
+                    New Password *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showNewPass ? 'text' : 'password'}
+                      required
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="At least 6 characters"
+                      className="w-full pl-3.5 pr-10 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm text-[#1C1E21] focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPass(!showNewPass)}
+                      className="absolute right-3 top-3 text-neutral-400 hover:text-neutral-600 cursor-pointer"
+                    >
+                      {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-neutral-700 font-semibold mb-1">
+                    Confirm New Password *
+                  </label>
                   <input
-                    type={showCurrentPass ? 'text' : 'password'}
+                    type="password"
                     required
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="Current password"
-                    className="w-full pl-3.5 pr-10 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm text-[#1C1E21]"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Repeat new password"
+                    className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm text-[#1C1E21] focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowCurrentPass(!showCurrentPass)}
-                    className="absolute right-3 top-3 text-neutral-400 hover:text-neutral-600 cursor-pointer"
-                  >
-                    {showCurrentPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
                 </div>
-              </div>
+              </form>
+            </div>
 
-              <div>
-                <label className="block text-neutral-700 font-semibold mb-1">
-                  New Password *
-                </label>
-                <div className="relative">
-                  <input
-                    type={showNewPass ? 'text' : 'password'}
-                    required
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="At least 6 characters"
-                    className="w-full pl-3.5 pr-10 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm text-[#1C1E21]"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPass(!showNewPass)}
-                    className="absolute right-3 top-3 text-neutral-400 hover:text-neutral-600 cursor-pointer"
-                  >
-                    {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
+            {/* Fixed Footer */}
+            <div className="p-4 sm:p-5 border-t border-neutral-100 bg-neutral-50/50 flex items-center justify-end gap-2.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setActiveSettingModal(null)}
+                className="px-4 py-2.5 rounded-xl border border-neutral-200 text-xs font-semibold text-neutral-600 hover:bg-neutral-100 cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="passwordSettingsForm"
+                disabled={isChangingPass}
+                className="px-5 py-2.5 bg-[#B65A37] hover:bg-[#A7472B] active:bg-[#8C3E20] text-white rounded-xl text-xs font-semibold shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {isChangingPass ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Updating...</span>
+                  </>
+                ) : (
+                  <span>Save Password</span>
+                )}
+              </button>
+            </div>
 
-              <div>
-                <label className="block text-neutral-700 font-semibold mb-1">
-                  Confirm New Password *
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Repeat new password"
-                  className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm text-[#1C1E21]"
-                />
-              </div>
-
-              <div className="pt-3 border-t border-neutral-100 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setActiveSettingModal(null)}
-                  className="px-4 py-2.5 rounded-xl border border-neutral-200 text-xs font-semibold text-neutral-600 hover:bg-neutral-50 cursor-pointer transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isChangingPass}
-                  className="px-5 py-2.5 bg-[#1B5E3C] hover:bg-[#15472E] text-white rounded-xl text-xs font-semibold shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                >
-                  {isChangingPass ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Updating...</span>
-                    </>
-                  ) : (
-                    <span>Save Password</span>
-                  )}
-                </button>
-              </div>
-
-            </form>
           </div>
         </div>
       )}
@@ -2817,12 +2677,12 @@ export const AdminPanel = ({ onClose }) => {
                       }}
                       className={`w-full flex items-center justify-between px-3.5 py-2.5 text-sm transition-all rounded-xl ${
                         isActive
-                          ? 'bg-[#EAF4ED] text-[#1B5E3C] font-semibold'
+                          ? 'bg-[#FAF2E9] text-[#B65A37] font-semibold'
                           : 'text-[#4A5568] hover:bg-neutral-100 font-medium'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <IconComp className={`w-4 h-4 ${isActive ? 'text-[#1B5E3C]' : 'text-[#4A5568]'}`} />
+                        <IconComp className={`w-4 h-4 ${isActive ? 'text-[#B65A37]' : 'text-[#4A5568]'}`} />
                         <span>{tab.label}</span>
                       </div>
                       {tab.badge !== undefined && (
@@ -2849,162 +2709,516 @@ export const AdminPanel = ({ onClose }) => {
       )}
 
       {/* ========================================================
-          MODAL: ADD / EDIT PRODUCT
+          MODAL: ADD / EDIT PRODUCT (EXACT MATCH TO USER SCREENSHOTS)
          ======================================================== */}
       {isProductModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-neutral-200 space-y-4 my-8">
-            <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
-              <h3 className="font-bold text-base text-neutral-900">
-                {editingProductId ? 'Edit Product' : 'Add New Product'}
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[88vh] sm:max-h-[85vh] flex flex-col shadow-2xl border border-neutral-200 overflow-hidden my-auto">
+            
+            {/* Fixed Header */}
+            <div className="p-5 sm:p-6 border-b border-neutral-100 flex items-center justify-between shrink-0">
+              <h3 className="font-bold text-lg sm:text-xl text-[#1C1E21]">
+                {editingProductId ? 'Edit product' : 'Add product'}
               </h3>
               <button
                 onClick={() => setIsProductModalOpen(false)}
-                className="p-1 rounded-full hover:bg-neutral-100 text-neutral-500"
+                className="w-8 h-8 rounded-lg bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-500 transition-colors cursor-pointer"
+                aria-label="Close"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleProductFormSubmit} className="space-y-4 text-xs">
-              
-              {/* Photo Upload Slots */}
-              <div>
-                <label className="block text-neutral-700 font-semibold mb-1">
-                  Photos ({productForm.images.length}/3)
-                </label>
-                <div className="grid grid-cols-3 gap-2 mb-2">
-                  {productForm.images.map((img, idx) => (
-                    <div key={idx} className="relative aspect-[3/4] rounded-xl overflow-hidden border border-neutral-200">
-                      <img src={img} alt={`Slot ${idx}`} className="w-full h-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveImage(idx)}
-                        className="absolute top-1 right-1 p-1 bg-rose-600 text-white rounded-full shadow-xs"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                  {productForm.images.length < 3 && (
-                    <button
-                      type="button"
-                      onClick={() => fileInputGalleryRef.current?.click()}
-                      className="aspect-[3/4] rounded-xl border-2 border-dashed border-neutral-300 flex flex-col items-center justify-center p-2 hover:bg-neutral-50"
-                    >
-                      <Plus className="w-5 h-5 text-neutral-400 mb-1" />
-                      <span className="text-[10px] text-neutral-500 font-medium">Add Photo</span>
-                    </button>
-                  )}
-                </div>
-                <input
-                  ref={fileInputGalleryRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-              </div>
-
-              <div>
-                <label className="block text-neutral-700 font-semibold mb-1">Product Title *</label>
-                <input
-                  type="text"
-                  required
-                  value={productForm.title}
-                  onChange={(e) => setProductForm(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="e.g. Mustard Bandhani Zari Kurta Set"
-                  className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+            {/* Scrollable Body */}
+            <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-5 text-xs sm:text-sm">
+              <form id="productFormSubmit" onSubmit={handleProductFormSubmit} className="space-y-5">
+                
+                {/* 1. Product name */}
                 <div>
-                  <label className="block text-neutral-700 font-semibold mb-1">Category</label>
-                  <select
-                    value={productForm.categorySlug}
-                    onChange={(e) => {
-                      const sel = categories.find(c => c.slug === e.target.value);
-                      setProductForm(prev => ({
-                        ...prev,
-                        categorySlug: e.target.value,
-                        category: sel ? sel.name : e.target.value
-                      }));
-                    }}
-                    className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm"
-                  >
-                    {categories.map(c => (
-                      <option key={c.slug} value={c.slug}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-neutral-700 font-semibold mb-1">Selling Price (₹) *</label>
+                  <label className="block text-xs sm:text-sm font-semibold text-[#1C1E21] mb-1.5">
+                    Product name
+                  </label>
                   <input
-                    type="number"
+                    type="text"
                     required
-                    min="0"
-                    value={productForm.price}
-                    onChange={(e) => setProductForm(prev => ({ ...prev, price: e.target.value }))}
-                    placeholder="2890"
-                    className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm"
+                    value={productForm.title}
+                    onChange={(e) => setProductForm(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="e.g. Adenium Desert Rose, Alphonso Mango Plant"
+                    className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm text-[#1C1E21] focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-3">
+                {/* 2. Category Assignment (Indented Tree Checkboxes) */}
                 <div>
-                  <label className="block text-neutral-700 font-semibold mb-1">Original MRP (₹)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={productForm.originalPrice}
-                    onChange={(e) => setProductForm(prev => ({ ...prev, originalPrice: e.target.value }))}
-                    placeholder="3690"
-                    className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm"
-                  />
+                  <label className="block text-xs sm:text-sm font-semibold text-[#1C1E21] mb-0.5">
+                    Category Assignment
+                  </label>
+                  <p className="text-xs text-neutral-400 mb-2">
+                    Select one or multiple categories (parent, subcategory, or both).
+                  </p>
+                  <div className="border border-[#CBD5E1] rounded-2xl bg-white overflow-hidden divide-y divide-neutral-100 max-h-48 overflow-y-auto">
+                    {getCategoryTree(categories).map(cat => {
+                      const catKey = cat.id || cat.slug;
+                      const isChecked = (productForm.categoryIds || []).includes(catKey);
+                      return (
+                        <div
+                          key={catKey}
+                          onClick={() => {
+                            setProductForm(prev => {
+                              const curr = prev.categoryIds || [];
+                              const next = curr.includes(catKey)
+                                ? curr.filter(k => k !== catKey)
+                                : [...curr, catKey];
+                              return { ...prev, categoryIds: next };
+                            });
+                          }}
+                          style={{ paddingLeft: `${cat.depth * 24 + 16}px` }}
+                          className={`py-2.5 pr-4 flex items-center gap-2.5 hover:bg-neutral-50 cursor-pointer select-none transition-colors ${
+                            cat.depth > 0 ? 'bg-neutral-50/40 text-neutral-700' : 'font-bold text-neutral-900'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {}}
+                            className="w-4 h-4 rounded text-[#B65A37] focus:ring-[#B65A37] border-neutral-300 pointer-events-none"
+                          />
+                          {cat.depth > 0 && <span className="text-neutral-400 font-mono">└</span>}
+                          <span className={cat.depth === 0 ? 'font-bold uppercase tracking-wider text-xs' : 'text-xs'}>
+                            {cat.name}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
+
+                {/* 3. Selling price (₹) & Original price (₹, optional) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs sm:text-sm font-semibold text-[#1C1E21] mb-1.5">
+                      Selling price (₹)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      step="any"
+                      value={productForm.price}
+                      onChange={(e) => setProductForm(prev => ({ ...prev, price: e.target.value }))}
+                      placeholder="0.00"
+                      className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm text-[#1C1E21] focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs sm:text-sm font-semibold text-[#1C1E21] mb-1.5">
+                      Original price (₹, optional)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={productForm.originalPrice}
+                      onChange={(e) => setProductForm(prev => ({ ...prev, originalPrice: e.target.value }))}
+                      placeholder="Before discount"
+                      className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm text-[#1C1E21] focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
+                    />
+                  </div>
+                </div>
+
+                {/* 4. Product images (up to 2) */}
+                <div className="space-y-3">
+                  <h4 className="font-bold text-xs sm:text-sm text-[#1C1E21]">
+                    Product images (up to 2)
+                  </h4>
+
+                  {/* Primary image */}
+                  <div>
+                    <span className="block text-xs font-semibold text-neutral-700 mb-1.5">
+                      Primary image
+                    </span>
+                    <div className="flex items-center gap-4">
+                      <div
+                        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                        onDrop={async (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const file = e.dataTransfer?.files?.[0];
+                          if (file) {
+                            try {
+                              const url = await compressImage(file);
+                              setProductForm(prev => ({ ...prev, primaryImage: url }));
+                              showToast('Primary image dropped & set');
+                            } catch (err) {}
+                          }
+                        }}
+                        className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-2 border-dashed border-[#E8D9C8] bg-[#FAF2E9]/40 flex items-center justify-center shrink-0 overflow-hidden relative group"
+                      >
+                        {productForm.primaryImage ? (
+                          <>
+                            <img src={productForm.primaryImage} alt="Primary" className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => setProductForm(prev => ({ ...prev, primaryImage: '' }))}
+                              className="absolute top-1 right-1 p-1 bg-rose-600 text-white rounded-full opacity-80 hover:opacity-100 cursor-pointer shadow-xs"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </>
+                        ) : (
+                          <ImageIcon className="w-8 h-8 text-[#B65A37]/50" />
+                        )}
+                      </div>
+
+                      <div>
+                        <input
+                          type="file"
+                          ref={primaryImageInputRef}
+                          onChange={handleProductPrimaryImageUpload}
+                          accept="image/*"
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => primaryImageInputRef.current?.click()}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-[#CBD5E1] hover:bg-neutral-50 text-neutral-800 rounded-xl text-xs font-semibold shadow-2xs cursor-pointer"
+                        >
+                          <Upload className="w-4 h-4 text-neutral-600" />
+                          <span>Upload image</span>
+                        </button>
+                        <p className="text-[11px] text-neutral-400 mt-1.5">
+                          Drag &amp; drop image here
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Second image (optional) */}
+                  <div>
+                    <span className="block text-xs font-semibold text-neutral-700 mb-1.5">
+                      Second image (optional)
+                    </span>
+                    <div className="flex items-center gap-4">
+                      <div
+                        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                        onDrop={async (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const file = e.dataTransfer?.files?.[0];
+                          if (file) {
+                            try {
+                              const url = await compressImage(file);
+                              setProductForm(prev => ({ ...prev, secondImage: url }));
+                              showToast('Second image dropped & set');
+                            } catch (err) {}
+                          }
+                        }}
+                        className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-2 border-dashed border-[#E8D9C8] bg-[#FAF2E9]/40 flex items-center justify-center shrink-0 overflow-hidden relative group"
+                      >
+                        {productForm.secondImage ? (
+                          <>
+                            <img src={productForm.secondImage} alt="Second" className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => setProductForm(prev => ({ ...prev, secondImage: '' }))}
+                              className="absolute top-1 right-1 p-1 bg-rose-600 text-white rounded-full opacity-80 hover:opacity-100 cursor-pointer shadow-xs"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </>
+                        ) : (
+                          <ImageIcon className="w-8 h-8 text-[#B65A37]/50" />
+                        )}
+                      </div>
+
+                      <div>
+                        <input
+                          type="file"
+                          ref={secondImageInputRef}
+                          onChange={handleProductSecondImageUpload}
+                          accept="image/*"
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => secondImageInputRef.current?.click()}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-[#CBD5E1] hover:bg-neutral-50 text-neutral-800 rounded-xl text-xs font-semibold shadow-2xs cursor-pointer"
+                        >
+                          <Upload className="w-4 h-4 text-neutral-600" />
+                          <span>Upload image</span>
+                        </button>
+                        <p className="text-[11px] text-neutral-400 mt-1.5">
+                          Drag &amp; drop image here
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 5. Delivery & Shipping Scope (3 Cards) */}
+                <div className="space-y-2 pt-2">
+                  <h4 className="font-bold text-sm sm:text-base text-[#1C1E21]">
+                    Delivery &amp; Shipping Scope
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    
+                    {/* All India Delivery */}
+                    <div
+                      onClick={() => setProductForm(prev => ({ ...prev, shippingScope: 'all_india' }))}
+                      className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
+                        productForm.shippingScope === 'all_india'
+                          ? 'border-[#B65A37] bg-[#FAF2E9]/40 ring-1 ring-[#B65A37]'
+                          : 'border-[#CBD5E1] bg-white hover:border-neutral-400'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 mb-1.5">
+                        <input
+                          type="radio"
+                          name="shippingScope"
+                          checked={productForm.shippingScope === 'all_india'}
+                          onChange={() => {}}
+                          className="w-4 h-4 text-[#B65A37] focus:ring-[#B65A37] pointer-events-none"
+                        />
+                        <span className="font-bold text-xs text-[#1C1E21]">
+                          All India Delivery
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-neutral-500 leading-snug pl-6.5">
+                        Ships to all serviceable delivery pincodes across India.
+                      </p>
+                    </div>
+
+                    {/* Specific States Only */}
+                    <div
+                      onClick={() => setProductForm(prev => ({ ...prev, shippingScope: 'specific_states' }))}
+                      className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
+                        productForm.shippingScope === 'specific_states'
+                          ? 'border-[#B65A37] bg-[#FAF2E9]/40 ring-1 ring-[#B65A37]'
+                          : 'border-[#CBD5E1] bg-white hover:border-neutral-400'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 mb-1.5">
+                        <input
+                          type="radio"
+                          name="shippingScope"
+                          checked={productForm.shippingScope === 'specific_states'}
+                          onChange={() => {}}
+                          className="w-4 h-4 text-[#B65A37] focus:ring-[#B65A37] pointer-events-none"
+                        />
+                        <span className="font-bold text-xs text-[#1C1E21]">
+                          Specific States Only
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-neutral-500 leading-snug pl-6.5">
+                        Restricted to selected states/UTs (e.g. West Bengal, Odisha).
+                      </p>
+                    </div>
+
+                    {/* Specific Pincodes Only */}
+                    <div
+                      onClick={() => setProductForm(prev => ({ ...prev, shippingScope: 'specific_pincodes' }))}
+                      className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
+                        productForm.shippingScope === 'specific_pincodes'
+                          ? 'border-[#B65A37] bg-[#FAF2E9]/40 ring-1 ring-[#B65A37]'
+                          : 'border-[#CBD5E1] bg-white hover:border-neutral-400'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 mb-1.5">
+                        <input
+                          type="radio"
+                          name="shippingScope"
+                          checked={productForm.shippingScope === 'specific_pincodes'}
+                          onChange={() => {}}
+                          className="w-4 h-4 text-[#B65A37] focus:ring-[#B65A37] pointer-events-none"
+                        />
+                        <span className="font-bold text-xs text-[#1C1E21]">
+                          Specific Pincodes Only
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-neutral-500 leading-snug pl-6.5">
+                        Only customers with exact matching pincodes can buy.
+                      </p>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* 6. Description (optional) */}
                 <div>
-                  <label className="block text-neutral-700 font-semibold mb-1">Stock Units</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={productForm.stock}
-                    onChange={(e) => setProductForm(prev => ({ ...prev, stock: e.target.value }))}
-                    className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm"
+                  <label className="block text-xs sm:text-sm font-semibold text-[#1C1E21] mb-1.5">
+                    Description (optional)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={productForm.description}
+                    onChange={(e) => setProductForm(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Tell customers about this plant / handcrafted piece"
+                    className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-neutral-700 font-semibold mb-1">Description</label>
-                <textarea
-                  rows={3}
-                  value={productForm.description}
-                  onChange={(e) => setProductForm(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Textile craft, fabric, and styling notes..."
-                  className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm"
-                />
-              </div>
+                {/* 7. Product information */}
+                <div className="space-y-3 pt-2">
+                  <h4 className="font-bold text-sm sm:text-base text-[#1C1E21]">
+                    Product information
+                  </h4>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1C1E21] mb-1">
+                      Plant Care Tips
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={productForm.careTips}
+                      onChange={(e) => setProductForm(prev => ({ ...prev, careTips: e.target.value }))}
+                      placeholder="Watering, sunlight, soil and other care instructions"
+                      className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1C1E21] mb-1">
+                      Delivery &amp; Returns
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={productForm.deliveryReturns}
+                      onChange={(e) => setProductForm(prev => ({ ...prev, deliveryReturns: e.target.value }))}
+                      placeholder="Delivery times and the return policy for this product"
+                      className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
+                    />
+                  </div>
+                </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-neutral-100">
-                <button
-                  type="button"
-                  onClick={() => setIsProductModalOpen(false)}
-                  className="px-4 py-2 bg-neutral-100 rounded-xl text-xs font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-[#1B5E3C] hover:bg-[#15472E] text-white rounded-xl text-xs font-semibold"
-                >
-                  {editingProductId ? 'Update Product' : 'Save Product'}
-                </button>
-              </div>
+                {/* 8. Highlights below purchase buttons */}
+                <div className="space-y-3 pt-2">
+                  <h4 className="font-bold text-sm sm:text-base text-[#1C1E21]">
+                    Highlights below purchase buttons
+                  </h4>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1C1E21] mb-1">
+                      Replacement
+                    </label>
+                    <input
+                      type="text"
+                      value={productForm.replacement}
+                      onChange={(e) => setProductForm(prev => ({ ...prev, replacement: e.target.value }))}
+                      placeholder="e.g. 7-day live plant guarantee"
+                      className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1C1E21] mb-1">
+                      Delivery
+                    </label>
+                    <input
+                      type="text"
+                      value={productForm.delivery}
+                      onChange={(e) => setProductForm(prev => ({ ...prev, delivery: e.target.value }))}
+                      placeholder="e.g. Ships across India in 3-5 days"
+                      className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1C1E21] mb-1">
+                      Guidance
+                    </label>
+                    <input
+                      type="text"
+                      value={productForm.guidance}
+                      onChange={(e) => setProductForm(prev => ({ ...prev, guidance: e.target.value }))}
+                      placeholder="e.g. Lifetime WhatsApp gardening advice"
+                      className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1C1E21] mb-1">
+                      Packaging
+                    </label>
+                    <input
+                      type="text"
+                      value={productForm.packaging}
+                      onChange={(e) => setProductForm(prev => ({ ...prev, packaging: e.target.value }))}
+                      placeholder="e.g. 5-layer corrugated ventilated box"
+                      className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1C1E21] mb-1">
+                      Sold in last 24 hours (optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={productForm.soldInLast24Hours}
+                      onChange={(e) => setProductForm(prev => ({ ...prev, soldInLast24Hours: e.target.value }))}
+                      placeholder="Enter count or leave blank"
+                      className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
+                    />
+                  </div>
+                </div>
 
-            </form>
+                {/* 9. Toggles Card */}
+                <div className="space-y-3 pt-2">
+                  <div className="p-4 rounded-2xl border border-[#CBD5E1] bg-white flex items-center justify-between">
+                    <div>
+                      <span className="text-xs sm:text-sm font-bold text-[#1C1E21] block">
+                        Sample reviews &amp; viewer count
+                      </span>
+                      <span className="text-[11px] text-neutral-400">
+                        Shows clearly labelled demo statistics on the product page.
+                      </span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={productForm.showSampleReviews}
+                        onChange={(e) => setProductForm(prev => ({ ...prev, showSampleReviews: e.target.checked }))}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#B65A37]"></div>
+                    </label>
+                  </div>
+
+                  <div className="p-4 rounded-2xl border border-[#CBD5E1] bg-white flex items-center justify-between">
+                    <div>
+                      <span className="text-xs sm:text-sm font-bold text-[#1C1E21] block">
+                        In stock
+                      </span>
+                      <span className="text-[11px] text-neutral-400">
+                        Turn off to display this product as sold out.
+                      </span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={productForm.inStock}
+                        onChange={(e) => setProductForm(prev => ({ ...prev, inStock: e.target.checked }))}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#B65A37]"></div>
+                    </label>
+                  </div>
+                </div>
+
+              </form>
+            </div>
+
+            {/* Fixed Footer */}
+            <div className="p-4 sm:p-5 border-t border-neutral-100 bg-neutral-50/50 flex items-center justify-end gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsProductModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl border border-neutral-200 text-xs font-semibold text-neutral-600 hover:bg-neutral-100 cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="productFormSubmit"
+                className="px-6 py-2.5 bg-[#B65A37] hover:bg-[#A7472B] active:bg-[#8C3E20] text-white rounded-xl text-xs sm:text-sm font-semibold shadow-xs transition-colors cursor-pointer"
+              >
+                {editingProductId ? 'Save product' : 'Add product'}
+              </button>
+            </div>
+
           </div>
         </div>
       )}
@@ -3013,11 +3227,11 @@ export const AdminPanel = ({ onClose }) => {
           MODAL: CREATE / EDIT CATEGORY (EXACT MATCH TO SCREENSHOT)
          ======================================================== */}
       {isCategoryModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-neutral-200 space-y-6">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[88vh] sm:max-h-[85vh] flex flex-col shadow-2xl border border-neutral-200 overflow-hidden my-auto">
             
-            {/* Modal Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+            {/* Fixed Header */}
+            <div className="p-5 sm:p-6 border-b border-neutral-100 flex items-center justify-between shrink-0">
               <h3 className="font-bold text-lg sm:text-xl text-[#1C1E21]">
                 {editingCategoryId ? 'Edit category' : 'Create category'}
               </h3>
@@ -3030,311 +3244,159 @@ export const AdminPanel = ({ onClose }) => {
               </button>
             </div>
 
-            <form onSubmit={handleCategorySubmit} className="space-y-5">
-              
-              {/* Category name */}
-              <div>
-                <label className="block text-xs sm:text-sm font-semibold text-[#1C1E21] mb-2">
-                  Category name
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={categoryForm.name}
-                  onChange={(e) => setCategoryForm(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="e.g. Fruit Plants, Mango, Indoor Bonsai"
-                  className="w-full px-4 py-3 bg-white border border-[#CBD5E1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1B5E3C]/20 focus:border-[#1B5E3C] placeholder:text-neutral-400 text-[#1C1E21]"
-                />
-              </div>
-
-              {/* Parent Category (Optional) */}
-              <div>
-                <label className="block text-xs sm:text-sm font-semibold text-[#1C1E21] mb-2">
-                  Parent Category (Optional)
-                </label>
-                <div className="relative">
-                  <select
-                    value={categoryForm.parentId}
-                    onChange={(e) => setCategoryForm(prev => ({ ...prev, parentId: e.target.value }))}
-                    className="w-full px-4 py-3 bg-white border border-[#CBD5E1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1B5E3C]/20 focus:border-[#1B5E3C] appearance-none cursor-pointer pr-10 text-[#1C1E21]"
-                  >
-                    <option value="">None (Top-level Category)</option>
-                    {categories
-                      .filter(c => !c.parentId && (!editingCategoryId || (c.id !== editingCategoryId && c.slug !== editingCategoryId)))
-                      .map(p => (
-                        <option key={p.id || p.slug} value={p.id || p.slug}>
-                          {p.name}
-                        </option>
-                      ))
-                    }
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-neutral-500">
-                    <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                      <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
-                    </svg>
-                  </div>
-                </div>
-                <p className="text-xs text-neutral-400 mt-2">
-                  Leave as None for a main category, or choose a parent to create a subcategory.
-                </p>
-              </div>
-
-              {/* Thumbnail */}
-              <div>
-                <label className="block text-xs sm:text-sm font-semibold text-[#1C1E21] mb-2">
-                  Thumbnail
-                </label>
-                <div className="flex items-center gap-4">
-                  {/* Thumbnail Box */}
-                  <div 
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      const file = e.dataTransfer?.files?.[0];
-                      if (file) {
-                        compressImage(file).then(url => setCategoryForm(prev => ({ ...prev, imageUrl: url })));
-                      }
-                    }}
-                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-2 border-dashed border-[#A7D7B5] bg-[#F2FBF5] flex items-center justify-center shrink-0 overflow-hidden relative group"
-                  >
-                    {categoryForm.imageUrl ? (
-                      <img 
-                        src={categoryForm.imageUrl} 
-                        alt="Category Preview" 
-                        className="w-full h-full object-cover" 
-                      />
-                    ) : (
-                      <ImageIcon className="w-8 h-8 text-[#1B5E3C]/60" />
-                    )}
-                  </div>
-
-                  {/* Upload Controls */}
-                  <div className="flex-1">
-                    <input 
-                      type="file" 
-                      ref={categoryFileInputRef} 
-                      onChange={handleCategoryThumbnailUpload} 
-                      accept="image/*" 
-                      className="hidden" 
-                    />
-                    <button
-                      type="button"
-                      onClick={() => categoryFileInputRef.current?.click()}
-                      className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-[#CBD5E1] hover:bg-neutral-50 text-neutral-800 rounded-xl text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
-                    >
-                      <Upload className="w-4 h-4 text-neutral-600" />
-                      <span>Upload image</span>
-                    </button>
-                    <p className="text-[11px] sm:text-xs text-neutral-400 mt-2 leading-relaxed">
-                      JPG, PNG or WebP, up to 10 MB. Drag & drop image here.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Subtitle / Note */}
-              <div>
-                <label className="block text-xs sm:text-sm font-semibold text-[#1C1E21] mb-1.5">
-                  Subtitle / Description (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={categoryForm.subtitle}
-                  onChange={(e) => setCategoryForm(prev => ({ ...prev, subtitle: e.target.value }))}
-                  placeholder="e.g. Everyday Grace & Handcrafted Silhouettes"
-                  className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#1B5E3C]/20 focus:border-[#1B5E3C]"
-                />
-              </div>
-
-              {/* Footer Actions */}
-              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-neutral-100">
-                <button
-                  type="button"
-                  onClick={() => setIsCategoryModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-neutral-200 text-xs font-semibold text-neutral-600 hover:bg-neutral-50 cursor-pointer transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 bg-[#1B5E3C] hover:bg-[#15472E] text-white rounded-xl text-xs font-semibold shadow-xs cursor-pointer transition-colors"
-                >
-                  {editingCategoryId ? 'Save Category' : 'Create category'}
-                </button>
-              </div>
-
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================
-          MODAL: ADD / EDIT BLOG POST
-         ======================================================== */}
-      {isBlogModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-neutral-200 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
-              <h3 className="font-bold text-base text-neutral-900">
-                {editingBlogId ? 'Edit Story' : 'New Journal Story'}
-              </h3>
-              <button
-                onClick={() => setIsBlogModalOpen(false)}
-                className="p-1 rounded-full hover:bg-neutral-100 text-neutral-500"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleBlogSubmit} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-neutral-700 font-semibold mb-1">Article Title *</label>
-                <input
-                  type="text"
-                  required
-                  value={blogForm.title}
-                  onChange={(e) => setBlogForm(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="e.g. The Art of Bandhani & Golden Zari"
-                  className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+            {/* Scrollable Body */}
+            <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-5">
+              <form id="categoryFormSubmit" onSubmit={handleCategorySubmit} className="space-y-5">
+                
+                {/* Category name */}
                 <div>
-                  <label className="block text-neutral-700 font-semibold mb-1">Category Tag</label>
-                  <input
-                    type="text"
-                    value={blogForm.category}
-                    onChange={(e) => setBlogForm(prev => ({ ...prev, category: e.target.value }))}
-                    placeholder="TEXTILE CRAFTSMANSHIP"
-                    className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-neutral-700 font-semibold mb-1">Read Time</label>
-                  <input
-                    type="text"
-                    value={blogForm.readTime}
-                    onChange={(e) => setBlogForm(prev => ({ ...prev, readTime: e.target.value }))}
-                    placeholder="3 min read"
-                    className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-neutral-700 font-semibold mb-1">Excerpt / Story Summary</label>
-                <textarea
-                  rows={3}
-                  value={blogForm.subtitle}
-                  onChange={(e) => setBlogForm(prev => ({ ...prev, subtitle: e.target.value }))}
-                  placeholder="A short summary for the lookbook gallery card..."
-                  className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-neutral-100">
-                <button
-                  type="button"
-                  onClick={() => setIsBlogModalOpen(false)}
-                  className="px-4 py-2 bg-neutral-100 rounded-xl text-xs font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-[#1B5E3C] hover:bg-[#15472E] text-white rounded-xl text-xs font-semibold"
-                >
-                  Publish Story
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================
-          MODAL: ADD AFFILIATE
-         ======================================================== */}
-      {isAffiliateModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-neutral-200 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
-              <h3 className="font-bold text-base text-neutral-900">
-                Add Stylist / Affiliate Partner
-              </h3>
-              <button
-                onClick={() => setIsAffiliateModalOpen(false)}
-                className="p-1 rounded-full hover:bg-neutral-100 text-neutral-500"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleAffiliateSubmit} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-neutral-700 font-semibold mb-1">Partner Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={affiliateForm.name}
-                  onChange={(e) => setAffiliateForm(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="e.g. Ananya Sen"
-                  className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-neutral-700 font-semibold mb-1">Role / Description</label>
-                <input
-                  type="text"
-                  value={affiliateForm.role}
-                  onChange={(e) => setAffiliateForm(prev => ({ ...prev, role: e.target.value }))}
-                  placeholder="e.g. Pune Fashion Creator"
-                  className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-neutral-700 font-semibold mb-1">Coupon Code *</label>
+                  <label className="block text-xs sm:text-sm font-semibold text-[#1C1E21] mb-2">
+                    Category name
+                  </label>
                   <input
                     type="text"
                     required
-                    value={affiliateForm.code}
-                    onChange={(e) => setAffiliateForm(prev => ({ ...prev, code: e.target.value }))}
-                    placeholder="ANANYA10"
-                    className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm uppercase font-mono font-bold text-[#B65A37]"
+                    value={categoryForm.name}
+                    onChange={(e) => setCategoryForm(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="e.g. Kurtas, Sarees, Festive Edit"
+                    className="w-full px-4 py-3 bg-white border border-[#CBD5E1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37] placeholder:text-neutral-400 text-[#1C1E21]"
                   />
                 </div>
+
+                {/* Parent Category (Optional) */}
                 <div>
-                  <label className="block text-neutral-700 font-semibold mb-1">Discount Rate</label>
+                  <label className="block text-xs sm:text-sm font-semibold text-[#1C1E21] mb-2">
+                    Parent Category (Optional)
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={categoryForm.parentId}
+                      onChange={(e) => setCategoryForm(prev => ({ ...prev, parentId: e.target.value }))}
+                      className="w-full px-4 py-3 bg-white border border-[#CBD5E1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37] appearance-none cursor-pointer pr-10 text-[#1C1E21]"
+                    >
+                      <option value="">None (Top-level Category)</option>
+                      {categories
+                        .filter(c => !c.parentId && (!editingCategoryId || (c.id !== editingCategoryId && c.slug !== editingCategoryId)))
+                        .map(p => (
+                          <option key={p.id || p.slug} value={p.id || p.slug}>
+                            {p.name}
+                          </option>
+                        ))
+                      }
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-neutral-500">
+                      <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-xs text-neutral-400 mt-2">
+                    Leave as None for a main category, or choose a parent to create a subcategory.
+                  </p>
+                </div>
+
+                {/* Thumbnail with Drag & Drop */}
+                <div>
+                  <label className="block text-xs sm:text-sm font-semibold text-[#1C1E21] mb-2">
+                    Thumbnail
+                  </label>
+                  <div className="flex items-center gap-4">
+                    {/* Thumbnail Box */}
+                    <div 
+                      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                      onDrop={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const file = e.dataTransfer?.files?.[0];
+                        if (file) {
+                          try {
+                            const url = await compressImage(file);
+                            setCategoryForm(prev => ({ ...prev, imageUrl: url }));
+                            showToast('Category thumbnail dropped & set');
+                          } catch (err) {}
+                        }
+                      }}
+                      className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-2 border-dashed border-[#E8D9C8] bg-[#FAF2E9]/40 flex items-center justify-center shrink-0 overflow-hidden relative group"
+                    >
+                      {categoryForm.imageUrl ? (
+                        <>
+                          <img 
+                            src={categoryForm.imageUrl} 
+                            alt="Category Preview" 
+                            className="w-full h-full object-cover" 
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setCategoryForm(prev => ({ ...prev, imageUrl: '' }))}
+                            className="absolute top-1 right-1 p-1 bg-rose-600 text-white rounded-full opacity-80 hover:opacity-100 cursor-pointer shadow-xs"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </>
+                      ) : (
+                        <ImageIcon className="w-8 h-8 text-[#B65A37]/50" />
+                      )}
+                    </div>
+
+                    {/* Upload Controls */}
+                    <div className="flex-1">
+                      <input 
+                        type="file" 
+                        ref={categoryFileInputRef} 
+                        onChange={handleCategoryThumbnailUpload} 
+                        accept="image/*" 
+                        className="hidden" 
+                      />
+                      <button
+                        type="button"
+                        onClick={() => categoryFileInputRef.current?.click()}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-[#CBD5E1] hover:bg-neutral-50 text-neutral-800 rounded-xl text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                      >
+                        <Upload className="w-4 h-4 text-neutral-600" />
+                        <span>Upload image</span>
+                      </button>
+                      <p className="text-[11px] sm:text-xs text-neutral-400 mt-2 leading-relaxed">
+                        JPG, PNG or WebP, up to 10 MB. Drag &amp; drop image here.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Subtitle / Note */}
+                <div>
+                  <label className="block text-xs sm:text-sm font-semibold text-[#1C1E21] mb-1.5">
+                    Subtitle / Description (Optional)
+                  </label>
                   <input
                     type="text"
-                    value={affiliateForm.discount}
-                    onChange={(e) => setAffiliateForm(prev => ({ ...prev, discount: e.target.value }))}
-                    placeholder="10% OFF"
-                    className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-sm"
+                    value={categoryForm.subtitle}
+                    onChange={(e) => setCategoryForm(prev => ({ ...prev, subtitle: e.target.value }))}
+                    placeholder="e.g. Everyday Grace & Handcrafted Silhouettes"
+                    className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
                   />
                 </div>
-              </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-neutral-100">
-                <button
-                  type="button"
-                  onClick={() => setIsAffiliateModalOpen(false)}
-                  className="px-4 py-2 bg-neutral-100 rounded-xl text-xs font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-[#1B5E3C] hover:bg-[#15472E] text-white rounded-xl text-xs font-semibold"
-                >
-                  Create Partner
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
+
+            {/* Fixed Footer */}
+            <div className="p-4 sm:p-5 border-t border-neutral-100 bg-neutral-50/50 flex items-center justify-end gap-2.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsCategoryModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl border border-neutral-200 text-xs font-semibold text-neutral-600 hover:bg-neutral-100 cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="categoryFormSubmit"
+                className="px-5 py-2.5 bg-[#B65A37] hover:bg-[#A7472B] active:bg-[#8C3E20] text-white rounded-xl text-xs font-semibold shadow-xs cursor-pointer transition-colors"
+              >
+                {editingCategoryId ? 'Save Category' : 'Create category'}
+              </button>
+            </div>
+
           </div>
         </div>
       )}

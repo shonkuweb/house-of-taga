@@ -29,7 +29,7 @@ export const isDBConnected = () => dbIsReady;
  * Initialize and auto-migrate PostgreSQL tables with retry mechanism.
  * Gives PostgreSQL time to boot in Docker Compose (up to 30-40 seconds).
  */
-export async function initDB(maxRetries = 15, delayMs = 2000) {
+export async function initDB(maxRetries = 1, delayMs = 300) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       console.log(`[DB] Connecting to PostgreSQL (attempt ${attempt}/${maxRetries})...`);

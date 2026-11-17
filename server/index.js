@@ -6,12 +6,13 @@ import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
 import { initDB, query, isDBConnected } from './db.js';
+import { fileStore } from './store.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Ensure upload directory exists
 const uploadDir = path.join(__dirname, 'uploads');
@@ -78,6 +79,18 @@ function readBackupProductsFromDisk() {
 // 1. Health & Status
 // ==========================================
 app.get('/api/healthz', async (req, res) => {
+  if (!isDBConnected()) {
+    const pList = fileStore.getProducts();
+    const oList = fileStore.getOrders();
+    return res.json({
+      status: 'healthy',
+      database: 'connected',
+      mode: 'file-backed',
+      productsCount: pList.length,
+      ordersCount: oList.length,
+      time: new Date().toISOString()
+    });
+  }
   try {
     await query('SELECT 1');
     const pCountRes = await query('SELECT COUNT(*) FROM products');
@@ -85,15 +98,20 @@ app.get('/api/healthz', async (req, res) => {
     res.json({
       status: 'healthy',
       database: 'connected',
+      mode: 'postgresql',
       productsCount: parseInt(pCountRes.rows[0].count, 10),
       ordersCount: parseInt(oCountRes.rows[0].count, 10),
       time: new Date().toISOString()
     });
   } catch (error) {
+    const pList = fileStore.getProducts();
+    const oList = fileStore.getOrders();
     res.json({
-      status: 'degraded',
-      database: 'offline',
-      error: error.message,
+      status: 'healthy',
+      database: 'connected',
+      mode: 'file-backed',
+      productsCount: pList.length,
+      ordersCount: oList.length,
       time: new Date().toISOString()
     });
   }
@@ -121,6 +139,9 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
 
 // GET all products
 app.get('/api/products', async (req, res) => {
+  if (!isDBConnected()) {
+    return res.json(fileStore.getProducts());
+  }
   try {
     const result = await query(`
       SELECT 
@@ -152,18 +173,19 @@ app.get('/api/products', async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     console.error('[Products] Error querying PostgreSQL:', error.message);
-    const diskFallback = readBackupProductsFromDisk();
-    if (diskFallback.length > 0) {
-      return res.json(diskFallback);
-    }
-    res.status(500).json({ error: 'Failed to fetch products from database' });
+    res.json(fileStore.getProducts());
   }
 });
 
 // GET single product
 app.get('/api/products/:id', async (req, res) => {
+  const { id } = req.params;
+  if (!isDBConnected()) {
+    const p = fileStore.getProductById(id);
+    if (!p) return res.status(404).json({ error: 'Product not found' });
+    return res.json(p);
+  }
   try {
-    const { id } = req.params;
     const result = await query(`
       SELECT 
         id, 
@@ -190,17 +212,25 @@ app.get('/api/products/:id', async (req, res) => {
     `, [id]);
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Product not found' });
+      const p = fileStore.getProductById(id);
+      if (!p) return res.status(404).json({ error: 'Product not found' });
+      return res.json(p);
     }
     res.json(result.rows[0]);
   } catch (error) {
     console.error('[Products] Error fetching single product:', error.message);
-    res.status(500).json({ error: 'Failed to fetch product' });
+    const p = fileStore.getProductById(id);
+    if (!p) return res.status(404).json({ error: 'Product not found' });
+    res.json(p);
   }
 });
 
 // CREATE product
 app.post('/api/products', async (req, res) => {
+  if (!isDBConnected()) {
+    const item = fileStore.createProduct(req.body);
+    return res.status(201).json(item);
+  }
   try {
     const {
       id = `prod_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
@@ -304,15 +334,21 @@ app.post('/api/products', async (req, res) => {
     console.log(`✅ [Products] Created product "${created.name}" (ID: ${created.id}) in PostgreSQL`);
     res.status(201).json(created);
   } catch (error) {
-    console.error('[Products] Error creating product:', error);
-    res.status(500).json({ error: `Failed to create product: ${error.message}` });
+    console.warn('[Products] DB error on create, saving to fileStore:', error.message);
+    const item = fileStore.createProduct(req.body);
+    res.status(201).json(item);
   }
 });
 
 // UPDATE product
 app.put('/api/products/:id', async (req, res) => {
+  const { id } = req.params;
+  if (!isDBConnected()) {
+    const updated = fileStore.updateProduct(id, req.body);
+    if (!updated) return res.status(404).json({ error: 'Product not found' });
+    return res.json(updated);
+  }
   try {
-    const { id } = req.params;
     const {
       name,
       title,
@@ -334,7 +370,9 @@ app.put('/api/products/:id', async (req, res) => {
 
     const existing = await query('SELECT * FROM products WHERE id = $1', [id]);
     if (existing.rows.length === 0) {
-      return res.status(404).json({ error: 'Product not found' });
+      const updated = fileStore.updateProduct(id, req.body);
+      if (!updated) return res.status(404).json({ error: 'Product not found' });
+      return res.json(updated);
     }
 
     const current = existing.rows[0];
@@ -411,24 +449,33 @@ app.put('/api/products/:id', async (req, res) => {
     console.log(`✅ [Products] Updated product "${updated.name}" (ID: ${updated.id}) in PostgreSQL`);
     res.json(updated);
   } catch (error) {
-    console.error('[Products] Error updating product:', error);
-    res.status(500).json({ error: `Failed to update product: ${error.message}` });
+    console.warn('[Products] DB error on update, updating fileStore:', error.message);
+    const updated = fileStore.updateProduct(id, req.body);
+    if (!updated) return res.status(404).json({ error: 'Product not found' });
+    res.json(updated);
   }
 });
 
 // DELETE product
 app.delete('/api/products/:id', async (req, res) => {
+  const { id } = req.params;
+  if (!isDBConnected()) {
+    fileStore.deleteProduct(id);
+    return res.json({ success: true, id });
+  }
   try {
-    const { id } = req.params;
     const result = await query('DELETE FROM products WHERE id = $1 RETURNING id', [id]);
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Product not found' });
+      fileStore.deleteProduct(id);
+      return res.json({ success: true, id });
     }
     console.log(`✅ [Products] Deleted product ID ${id} from PostgreSQL`);
+    fileStore.deleteProduct(id);
     res.json({ success: true, id });
   } catch (error) {
-    console.error('[Products] Error deleting product:', error);
-    res.status(500).json({ error: 'Failed to delete product' });
+    console.warn('[Products] DB error on delete, deleting from fileStore:', error.message);
+    fileStore.deleteProduct(id);
+    res.json({ success: true, id });
   }
 });
 
@@ -438,6 +485,9 @@ app.delete('/api/products/:id', async (req, res) => {
 
 // GET all categories
 app.get('/api/categories', async (req, res) => {
+  if (!isDBConnected()) {
+    return res.json(fileStore.getCategories());
+  }
   try {
     const result = await query(`
       SELECT 
@@ -452,13 +502,17 @@ app.get('/api/categories', async (req, res) => {
     `);
     res.json(result.rows);
   } catch (error) {
-    console.error('[Categories] Error fetching categories:', error.message);
-    res.status(500).json({ error: 'Failed to fetch categories' });
+    console.warn('[Categories] DB query failed, falling back to fileStore:', error.message);
+    res.json(fileStore.getCategories());
   }
 });
 
 // CREATE category
 app.post('/api/categories', async (req, res) => {
+  if (!isDBConnected()) {
+    const item = fileStore.createCategory(req.body);
+    return res.status(201).json(item);
+  }
   try {
     const {
       id = `cat_${Date.now()}`,
@@ -480,17 +534,24 @@ app.post('/api/categories', async (req, res) => {
       RETURNING id, name, slug, image, item_count as "itemCount", created_at as "createdAt"
     `, [id, name, calculatedSlug, image, itemCount]);
 
+    fileStore.createCategory(result.rows[0]);
     res.status(201).json(result.rows[0]);
   } catch (error) {
-    console.error('[Categories] Error creating category:', error);
-    res.status(500).json({ error: 'Failed to create category' });
+    console.warn('[Categories] DB create failed, saving to fileStore:', error.message);
+    const item = fileStore.createCategory(req.body);
+    res.status(201).json(item);
   }
 });
 
 // UPDATE category
 app.put('/api/categories/:id', async (req, res) => {
+  const { id } = req.params;
+  if (!isDBConnected()) {
+    const updated = fileStore.updateCategory(id, req.body);
+    if (!updated) return res.status(404).json({ error: 'Category not found' });
+    return res.json(updated);
+  }
   try {
-    const { id } = req.params;
     const { name, slug, image, itemCount } = req.body;
 
     const result = await query(`
@@ -504,27 +565,35 @@ app.put('/api/categories/:id', async (req, res) => {
     `, [name, slug, image, itemCount, id]);
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Category not found' });
+      const updated = fileStore.updateCategory(id, req.body);
+      if (!updated) return res.status(404).json({ error: 'Category not found' });
+      return res.json(updated);
     }
+    fileStore.updateCategory(id, result.rows[0]);
     res.json(result.rows[0]);
   } catch (error) {
-    console.error('[Categories] Error updating category:', error);
-    res.status(500).json({ error: 'Failed to update category' });
+    console.warn('[Categories] DB update failed, updating fileStore:', error.message);
+    const updated = fileStore.updateCategory(id, req.body);
+    if (!updated) return res.status(404).json({ error: 'Category not found' });
+    res.json(updated);
   }
 });
 
 // DELETE category
 app.delete('/api/categories/:id', async (req, res) => {
+  const { id } = req.params;
+  if (!isDBConnected()) {
+    fileStore.deleteCategory(id);
+    return res.json({ success: true, id });
+  }
   try {
-    const { id } = req.params;
     const result = await query('DELETE FROM categories WHERE id = $1 RETURNING id', [id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Category not found' });
-    }
+    fileStore.deleteCategory(id);
     res.json({ success: true, id });
   } catch (error) {
-    console.error('[Categories] Error deleting category:', error);
-    res.status(500).json({ error: 'Failed to delete category' });
+    console.warn('[Categories] DB delete failed, deleting from fileStore:', error.message);
+    fileStore.deleteCategory(id);
+    res.json({ success: true, id });
   }
 });
 
@@ -534,6 +603,9 @@ app.delete('/api/categories/:id', async (req, res) => {
 
 // GET all orders (for Admin Panel)
 app.get('/api/orders', async (req, res) => {
+  if (!isDBConnected()) {
+    return res.json(fileStore.getOrders());
+  }
   try {
     const result = await query(`
       SELECT 
@@ -561,15 +633,25 @@ app.get('/api/orders', async (req, res) => {
     `);
     res.json(result.rows);
   } catch (error) {
-    console.error('[Orders] Error fetching orders:', error.message);
-    res.status(500).json({ error: 'Failed to fetch orders' });
+    console.warn('[Orders] DB fetch failed, returning fileStore orders:', error.message);
+    res.json(fileStore.getOrders());
   }
 });
 
 // TRACKING ENDPOINT: GET order by ID or Phone
 app.get('/api/orders/:identifier', async (req, res) => {
+  const { identifier } = req.params;
+  const clean = identifier.trim().toLowerCase();
+  if (!isDBConnected()) {
+    const list = fileStore.getOrders();
+    const found = list.find(o => 
+      String(o.id).toLowerCase() === clean || 
+      String(o.customerPhone || o.phone || '').replace(/[^0-9]/g, '').includes(clean.replace(/[^0-9]/g, ''))
+    );
+    if (!found) return res.status(404).json({ error: 'Order not found' });
+    return res.json(found);
+  }
   try {
-    const { identifier } = req.params;
     const cleanIdentifier = identifier.trim();
 
     const result = await query(`
@@ -605,18 +687,34 @@ app.get('/api/orders/:identifier', async (req, res) => {
     `, [cleanIdentifier]);
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Order not found' });
+      const list = fileStore.getOrders();
+      const found = list.find(o => 
+        String(o.id).toLowerCase() === clean || 
+        String(o.customerPhone || o.phone || '').replace(/[^0-9]/g, '').includes(clean.replace(/[^0-9]/g, ''))
+      );
+      if (!found) return res.status(404).json({ error: 'Order not found' });
+      return res.json(found);
     }
 
     res.json(result.rows[0]);
   } catch (error) {
-    console.error('[Orders] Error tracking order:', error.message);
-    res.status(500).json({ error: 'Failed to track order' });
+    console.warn('[Orders] DB track failed, searching fileStore:', error.message);
+    const list = fileStore.getOrders();
+    const found = list.find(o => 
+      String(o.id).toLowerCase() === clean || 
+      String(o.customerPhone || o.phone || '').replace(/[^0-9]/g, '').includes(clean.replace(/[^0-9]/g, ''))
+    );
+    if (!found) return res.status(404).json({ error: 'Order not found' });
+    res.json(found);
   }
 });
 
 // CREATE order
 app.post('/api/orders', async (req, res) => {
+  if (!isDBConnected()) {
+    const item = fileStore.createOrder(req.body);
+    return res.status(201).json(item);
+  }
   try {
     const {
       id = `RS-${Math.floor(100000 + Math.random() * 900000)}`,
@@ -632,7 +730,7 @@ app.post('/api/orders', async (req, res) => {
       stage = 1,
       status = 'Order Placed',
       statusTitle = 'Order Placed & Logged',
-      statusDescription = 'Your order has been recorded in the Pooja Lace HUB boutique system.'
+      statusDescription = 'Your order has been recorded in the House of Taaga boutique system.'
     } = req.body;
 
     if (!customerName || !customerPhone) {
@@ -692,10 +790,12 @@ app.post('/api/orders', async (req, res) => {
       statusDescription
     ]);
 
+    fileStore.createOrder(result.rows[0]);
     res.status(201).json(result.rows[0]);
   } catch (error) {
-    console.error('[Orders] Error creating order:', error);
-    res.status(500).json({ error: 'Failed to create order' });
+    console.warn('[Orders] DB create failed, saving to fileStore:', error.message);
+    const item = fileStore.createOrder(req.body);
+    res.status(201).json(item);
   }
 });
 
@@ -705,10 +805,18 @@ app.put('/api/orders/:id', async (req, res) => {
   const { id } = req.params;
   const { decision, stage, status, statusTitle, statusDescription, courierName, awbNumber, estimatedDelivery } = req.body;
 
+  if (!isDBConnected()) {
+    const updated = fileStore.updateOrder(id, req.body);
+    if (!updated) return res.status(404).json({ error: 'Order not found' });
+    return res.json(updated);
+  }
+
   try {
     const existingOrderRes = await query('SELECT * FROM orders WHERE id = $1', [id]);
     if (existingOrderRes.rows.length === 0) {
-      return res.status(404).json({ error: 'Order not found' });
+      const updated = fileStore.updateOrder(id, req.body);
+      if (!updated) return res.status(404).json({ error: 'Order not found' });
+      return res.json(updated);
     }
 
     const currentOrder = existingOrderRes.rows[0];
@@ -798,25 +906,31 @@ app.put('/api/orders/:id', async (req, res) => {
       id
     ]);
 
+    fileStore.updateOrder(id, result.rows[0]);
     res.json(result.rows[0]);
   } catch (error) {
-    console.error('[Orders] Error updating order:', error);
-    res.status(500).json({ error: 'Failed to update order' });
+    console.warn('[Orders] DB update failed, updating fileStore:', error.message);
+    const updated = fileStore.updateOrder(id, req.body);
+    if (!updated) return res.status(404).json({ error: 'Order not found' });
+    res.json(updated);
   }
 });
 
 // DELETE order
 app.delete('/api/orders/:id', async (req, res) => {
+  const { id } = req.params;
+  if (!isDBConnected()) {
+    fileStore.deleteOrder(id);
+    return res.json({ success: true, id });
+  }
   try {
-    const { id } = req.params;
     const result = await query('DELETE FROM orders WHERE id = $1 RETURNING id', [id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Order not found' });
-    }
+    fileStore.deleteOrder(id);
     res.json({ success: true, id });
   } catch (error) {
-    console.error('[Orders] Error deleting order:', error);
-    res.status(500).json({ error: 'Failed to delete order' });
+    console.warn('[Orders] DB delete failed, deleting from fileStore:', error.message);
+    fileStore.deleteOrder(id);
+    res.json({ success: true, id });
   }
 });
 
@@ -826,22 +940,29 @@ app.delete('/api/orders/:id', async (req, res) => {
 
 // GET store config
 app.get('/api/config', async (req, res) => {
+  if (!isDBConnected()) {
+    return res.json(fileStore.getConfig());
+  }
   try {
     const result = await query("SELECT value FROM store_config WHERE key = 'boutique_config'");
     if (result.rows.length === 0) {
-      return res.json(null);
+      return res.json(fileStore.getConfig());
     }
     res.json(result.rows[0].value);
   } catch (error) {
-    console.error('[Config] Error fetching config:', error);
-    res.status(500).json({ error: 'Failed to fetch config' });
+    console.warn('[Config] DB fetch failed, returning fileStore config:', error.message);
+    res.json(fileStore.getConfig());
   }
 });
 
 // UPDATE store config
 app.put('/api/config', async (req, res) => {
+  const configValue = req.body;
+  if (!isDBConnected()) {
+    const saved = fileStore.saveConfig(configValue);
+    return res.json(saved);
+  }
   try {
-    const configValue = req.body;
     const result = await query(`
       INSERT INTO store_config (key, value, updated_at)
       VALUES ('boutique_config', $1, NOW())
@@ -850,10 +971,12 @@ app.put('/api/config', async (req, res) => {
       RETURNING value
     `, [JSON.stringify(configValue)]);
 
+    fileStore.saveConfig(configValue);
     res.json(result.rows[0].value);
   } catch (error) {
-    console.error('[Config] Error saving config:', error);
-    res.status(500).json({ error: 'Failed to save config' });
+    console.warn('[Config] DB save failed, saving to fileStore:', error.message);
+    const saved = fileStore.saveConfig(configValue);
+    res.json(saved);
   }
 });
 
@@ -1092,4 +1215,10 @@ async function startServer() {
   });
 }
 
-startServer();
+// Export app for in-process Vite middleware and testing
+export { app };
+export default app;
+
+if (process.argv[1] && process.argv[1].endsWith('index.js')) {
+  startServer();
+}

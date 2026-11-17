@@ -1,0 +1,34 @@
+[
+  {
+    "id": "cat_kurtas",
+    "name": "Kurtas",
+    "slug": "kurtas",
+    "subtitle": "Everyday Grace & Silhouettes",
+    "imageUrl": "/category-kurtas.jpg",
+    "order": 1
+  },
+  {
+    "id": "cat_sarees",
+    "name": "Sarees",
+    "slug": "sarees",
+    "subtitle": "Six Yards of Handwoven Poetry",
+    "imageUrl": "/category-sarees.jpg",
+    "order": 2
+  },
+  {
+    "id": "cat_coord",
+    "name": "Co-ord Sets",
+    "slug": "coord-sets",
+    "subtitle": "Modern Ease & Artisanal Cuts",
+    "imageUrl": "/category-coord.jpg",
+    "order": 3
+  },
+  {
+    "id": "cat_festive",
+    "name": "Festive Edit",
+    "slug": "festive-edit",
+    "subtitle": "Heirloom Silks & Zari Details",
+    "imageUrl": "/category-festive.jpg",
+    "order": 4
+  }
+]

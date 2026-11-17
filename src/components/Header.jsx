@@ -157,41 +157,62 @@ export const Header = () => {
       {/* ========================================================
           SECTION 2: HEADER (Sticky)
           Warm ivory background.
-          Mobile Layout: Hamburger left, logo center, search/account/bag right.
-          Desktop Layout: Logo center, search left, wishlist/account/bag right,
-          followed by an editorial category navigation bar.
+          Layout: Logo on LEFT, Search bar in MIDDLE, Actions on RIGHT.
+          No sub-navigation options under the navbar.
          ======================================================== */}
       <header className="sticky top-0 z-40 bg-[#FFF9F2]/95 backdrop-blur-md border-b border-[#E8D9C8] transition-all shadow-xs">
         
         {/* Main Header Row */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-4">
           
-          {/* Mobile Left: Hamburger menu toggle */}
-          <div className="flex items-center lg:hidden">
+          {/* Left: Mobile Drawer Trigger + Brand Logo */}
+          <div className="flex items-center gap-2 sm:gap-3.5 shrink-0">
             <button
               onClick={() => setIsDrawerOpen(true)}
-              className="p-1.5 -ml-1 text-[#382017] hover:text-[#B65A37] hover:bg-[#FAF2E9] rounded-full transition-colors cursor-pointer"
+              className="p-1.5 -ml-1 text-[#382017] hover:text-[#B65A37] hover:bg-[#FAF2E9] rounded-full transition-colors cursor-pointer lg:hidden"
               aria-label="Open Navigation Menu"
             >
-              <Menu className="w-6 h-6 stroke-[1.8]" />
+              <Menu className="w-5 h-5 sm:w-6 sm:h-6 stroke-[1.8]" />
             </button>
+
+            <div 
+              onClick={() => {
+                setActiveCategory('all');
+                navigate('/');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="flex items-center cursor-pointer select-none group py-0.5"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') navigate('/');
+              }}
+              aria-label="House of Taaga Home"
+            >
+              <img 
+                src="/logo-transparent.png" 
+                alt="House of Taaga" 
+                className="h-8 sm:h-10 lg:h-12 w-auto max-w-[130px] sm:max-w-[180px] object-contain transition-transform duration-300 group-hover:scale-105"
+              />
+            </div>
           </div>
 
-          {/* Desktop Left: Integrated Boutique Search Bar */}
-          <div className="hidden lg:flex items-center w-64 xl:w-72">
+          {/* Middle: Prominent Centered Search Bar */}
+          <div className="flex-1 max-w-sm sm:max-w-md lg:max-w-xl mx-1 sm:mx-4 lg:mx-8 flex items-center justify-center">
             <div className="relative w-full">
-              <Search className="w-4 h-4 text-[#8C6F5A] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#8C6F5A] absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search kurtas, sarees..."
-                className="w-full pl-9 pr-7 py-1.5 bg-[#FAF2E9] border border-[#E8D9C8] rounded-full text-xs text-[#382017] placeholder:text-[#8C6F5A]/70 focus:outline-none focus:ring-1 focus:ring-[#B65A37] focus:bg-white transition-all"
+                placeholder="Search kurtas, sarees, festive edit..."
+                className="w-full pl-8 sm:pl-10 pr-8 py-1.5 sm:py-2.5 bg-[#FAF2E9] border border-[#E8D9C8] rounded-full text-xs sm:text-sm text-[#382017] placeholder:text-[#8C6F5A]/70 focus:outline-none focus:ring-1.5 focus:ring-[#B65A37] focus:bg-white focus:border-[#B65A37] transition-all shadow-2xs"
               />
               {searchQuery && (
                 <button
+                  type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8C6F5A] hover:text-[#382017]"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8C6F5A] hover:text-[#382017] p-1 cursor-pointer"
                   aria-label="Clear Search"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -200,52 +221,21 @@ export const Header = () => {
             </div>
           </div>
 
-          {/* Center: Provided House of Taaga Logo */}
-          <div 
-            onClick={() => {
-              setActiveCategory('all');
-              navigate('/');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            className="flex items-center justify-center cursor-pointer select-none group px-2 py-0.5"
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') navigate('/');
-            }}
-            aria-label="House of Taaga Home"
-          >
-            <img 
-              src="/logo-transparent.png" 
-              alt="House of Taaga — Rooted in love. Worn with grace." 
-              className="h-9 sm:h-11 lg:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
-            />
-          </div>
-
           {/* Right Action Icons */}
-          <div className="flex items-center gap-1 sm:gap-2 lg:gap-3">
+          <div className="flex items-center gap-1 sm:gap-2 lg:gap-3 shrink-0">
             
-            {/* Mobile Search Icon */}
-            <button
-              onClick={() => setIsSearchOpen(prev => !prev)}
-              className="p-2 text-[#382017] hover:text-[#B65A37] hover:bg-[#FAF2E9] rounded-full transition-colors cursor-pointer lg:hidden"
-              aria-label="Search Collection"
-            >
-              <Search className="w-5 h-5 stroke-[1.8]" />
-            </button>
-
-            {/* Desktop Wishlist Link */}
+            {/* Wishlist Link */}
             <button
               onClick={() => {
                 const el = document.getElementById('catalog-section');
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="hidden lg:flex items-center gap-1.5 p-2 text-[#382017] hover:text-[#B65A37] hover:bg-[#FAF2E9] rounded-full transition-colors cursor-pointer text-xs font-sans"
+              className="flex items-center gap-1.5 p-1.5 sm:p-2 text-[#382017] hover:text-[#B65A37] hover:bg-[#FAF2E9] rounded-full transition-colors cursor-pointer text-xs font-sans"
               title="View Wishlist"
               aria-label="Wishlist"
             >
               <div className="relative">
-                <Heart className="w-5 h-5 stroke-[1.8]" />
+                <Heart className="w-4 h-4 sm:w-5 sm:h-5 stroke-[1.8]" />
                 {wishlist.length > 0 && (
                   <span className="absolute -top-1 -right-1 bg-[#D85179] text-white text-[9px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">
                     {wishlist.length}
@@ -255,25 +245,25 @@ export const Header = () => {
               <span className="font-medium hidden xl:inline">Wishlist</span>
             </button>
 
-            {/* Account / Admin Icon */}
+            {/* Account / Admin Portal */}
             <button
               onClick={() => navigate('/admin')}
-              className="p-2 text-[#382017] hover:text-[#B65A37] hover:bg-[#FAF2E9] rounded-full transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-sans"
+              className="p-1.5 sm:p-2 text-[#382017] hover:text-[#B65A37] hover:bg-[#FAF2E9] rounded-full transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-sans"
               aria-label="Account / Admin Portal"
               title="Admin & Account"
             >
-              <User className="w-5 h-5 stroke-[1.8]" />
+              <User className="w-4 h-4 sm:w-5 sm:h-5 stroke-[1.8]" />
               <span className="font-medium hidden xl:inline">Account</span>
             </button>
 
             {/* Shopping Bag Icon with Quantity Badge & Subtotal Preview */}
             <button
               onClick={() => setIsCartOpen(true)}
-              className="relative p-2 lg:px-3 lg:py-1.5 text-[#382017] hover:text-[#B65A37] hover:bg-[#FAF2E9] rounded-full transition-all cursor-pointer touch-manipulation flex items-center gap-2"
+              className="relative p-1.5 sm:p-2 lg:px-3 lg:py-1.5 text-[#382017] hover:text-[#B65A37] hover:bg-[#FAF2E9] rounded-full transition-all cursor-pointer touch-manipulation flex items-center gap-2"
               aria-label="Shopping Bag"
             >
               <div className="relative">
-                <ShoppingBag className="w-5 h-5 stroke-[1.8]" />
+                <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 stroke-[1.8]" />
                 {cartCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-[#B65A37] text-white text-[10px] font-bold min-w-4 h-4 px-1 rounded-full flex items-center justify-center shadow-xs select-none">
                     {cartCount > 99 ? '99+' : cartCount}
@@ -286,108 +276,6 @@ export const Header = () => {
             </button>
 
           </div>
-        </div>
-
-        {/* Desktop Editorial Navigation Bar */}
-        <div className="hidden lg:block border-t border-[#E8D9C8]/70 bg-[#FFF9F2]">
-          <nav className="max-w-5xl mx-auto px-4 py-2 flex items-center justify-center gap-8 xl:gap-10 text-xs font-serif tracking-[0.16em] uppercase">
-            
-            <button
-              onClick={() => handleCategoryNav('all')}
-              className={`py-1 relative transition-colors cursor-pointer ${
-                activeCategory === 'all' 
-                  ? 'text-[#B65A37] font-semibold' 
-                  : 'text-[#382017] hover:text-[#B65A37]'
-              }`}
-            >
-              <span>All Collections</span>
-              {activeCategory === 'all' && (
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[1.5px] bg-[#B65A37] rounded-full" />
-              )}
-            </button>
-
-            <button
-              onClick={() => handleCategoryNav('kurtas')}
-              className={`py-1 relative transition-colors cursor-pointer ${
-                activeCategory === 'kurtas' 
-                  ? 'text-[#B65A37] font-semibold' 
-                  : 'text-[#382017] hover:text-[#B65A37]'
-              }`}
-            >
-              <span>Kurtas</span>
-              {activeCategory === 'kurtas' && (
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[1.5px] bg-[#B65A37] rounded-full" />
-              )}
-            </button>
-
-            <button
-              onClick={() => handleCategoryNav('sarees')}
-              className={`py-1 relative transition-colors cursor-pointer ${
-                activeCategory === 'sarees' 
-                  ? 'text-[#B65A37] font-semibold' 
-                  : 'text-[#382017] hover:text-[#B65A37]'
-              }`}
-            >
-              <span>Sarees</span>
-              {activeCategory === 'sarees' && (
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[1.5px] bg-[#B65A37] rounded-full" />
-              )}
-            </button>
-
-            <button
-              onClick={() => handleCategoryNav('coord-sets')}
-              className={`py-1 relative transition-colors cursor-pointer ${
-                activeCategory === 'coord-sets' 
-                  ? 'text-[#B65A37] font-semibold' 
-                  : 'text-[#382017] hover:text-[#B65A37]'
-              }`}
-            >
-              <span>Co-ord Sets</span>
-              {activeCategory === 'coord-sets' && (
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[1.5px] bg-[#B65A37] rounded-full" />
-              )}
-            </button>
-
-            <button
-              onClick={() => handleCategoryNav('festive-edit')}
-              className={`py-1 relative transition-colors cursor-pointer flex items-center gap-1.5 ${
-                activeCategory === 'festive-edit' 
-                  ? 'text-[#B65A37] font-semibold' 
-                  : 'text-[#382017] hover:text-[#B65A37]'
-              }`}
-            >
-              <span>Festive Edit</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-[#D85179] inline-block animate-pulse" />
-              {activeCategory === 'festive-edit' && (
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[1.5px] bg-[#B65A37] rounded-full" />
-              )}
-            </button>
-
-            <span className="h-3 w-[1px] bg-[#E8D9C8]" />
-
-            <button
-              onClick={() => setIsAboutOpen(true)}
-              className="py-1 text-[#382017] hover:text-[#B65A37] transition-colors cursor-pointer"
-            >
-              <span>Our Story</span>
-            </button>
-
-            <button
-              onClick={() => scrollToSection('journal-section')}
-              className="py-1 text-[#382017] hover:text-[#B65A37] transition-colors cursor-pointer"
-            >
-              <span>The Journal</span>
-            </button>
-
-            <button
-              onClick={() => setIsContactOpen(true)}
-              className="py-1 text-[#8C6F5A] hover:text-[#B65A37] transition-colors cursor-pointer flex items-center gap-1 font-sans text-[11px]"
-            >
-              <Sparkles className="w-3 h-3 text-[#C69B52]" />
-              <span>Pune Studio</span>
-            </button>
-
-          </nav>
         </div>
 
         {/* Mobile Dropdown Live Search Bar */}
@@ -461,39 +349,16 @@ export const Header = () => {
                     <ChevronRight className="w-4 h-4 text-[#C69B52]" />
                   </button>
 
-                  <button
-                    onClick={() => handleCategoryNav('kurtas')}
-                    className="w-full flex items-center justify-between px-3 py-2.5 text-sm font-serif text-[#382017] hover:text-[#B65A37] hover:bg-[#FAF2E9] rounded-xl transition-colors text-left"
-                  >
-                    <span>Kurtas</span>
-                    <ChevronRight className="w-4 h-4 text-[#C69B52]" />
-                  </button>
-
-                  <button
-                    onClick={() => handleCategoryNav('sarees')}
-                    className="w-full flex items-center justify-between px-3 py-2.5 text-sm font-serif text-[#382017] hover:text-[#B65A37] hover:bg-[#FAF2E9] rounded-xl transition-colors text-left"
-                  >
-                    <span>Sarees</span>
-                    <ChevronRight className="w-4 h-4 text-[#C69B52]" />
-                  </button>
-
-                  <button
-                    onClick={() => handleCategoryNav('coord-sets')}
-                    className="w-full flex items-center justify-between px-3 py-2.5 text-sm font-serif text-[#382017] hover:text-[#B65A37] hover:bg-[#FAF2E9] rounded-xl transition-colors text-left"
-                  >
-                    <span>Co-ord Sets</span>
-                    <ChevronRight className="w-4 h-4 text-[#C69B52]" />
-                  </button>
-
-                  <button
-                    onClick={() => handleCategoryNav('festive-edit')}
-                    className="w-full flex items-center justify-between px-3 py-2.5 text-sm font-serif text-[#382017] hover:text-[#B65A37] hover:bg-[#FAF2E9] rounded-xl transition-colors text-left"
-                  >
-                    <span>Festive Edit</span>
-                    <span className="text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#B65A37] text-white font-sans font-semibold">
-                      New
-                    </span>
-                  </button>
+                  {Array.isArray(categories) && categories.map((cat) => (
+                    <button
+                      key={cat.id || cat.slug}
+                      onClick={() => handleCategoryNav(cat.slug)}
+                      className="w-full flex items-center justify-between px-3 py-2.5 text-sm font-serif text-[#382017] hover:text-[#B65A37] hover:bg-[#FAF2E9] rounded-xl transition-colors text-left"
+                    >
+                      <span>{cat.name}</span>
+                      <ChevronRight className="w-4 h-4 text-[#C69B52]" />
+                    </button>
+                  ))}
                 </nav>
 
                 <div className="my-3 border-t border-[#E8D9C8]" />

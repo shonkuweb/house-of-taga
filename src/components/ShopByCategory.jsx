@@ -16,37 +16,8 @@ export const ShopByCategory = ({ onSelectCategory }) => {
     }
   };
 
-  // Fallback category items matching the exact 4 required in the prompt
-  const displayCategories = [
-    {
-      id: 'cat_kurtas',
-      name: 'Kurtas',
-      slug: 'kurtas',
-      subtitle: 'Artisanal Everyday Silhouettes',
-      imageUrl: '/category-kurtas.jpg',
-    },
-    {
-      id: 'cat_sarees',
-      name: 'Sarees',
-      slug: 'sarees',
-      subtitle: 'Handwoven Chanderi & Silks',
-      imageUrl: '/category-sarees.jpg',
-    },
-    {
-      id: 'cat_coord',
-      name: 'Co-ord Sets',
-      slug: 'coord-sets',
-      subtitle: 'Modern Ease & Linen Cuts',
-      imageUrl: '/category-coord.jpg',
-    },
-    {
-      id: 'cat_festive',
-      name: 'Festive Edit',
-      slug: 'festive-edit',
-      subtitle: 'Opulent Zari & Kashmiri Yokes',
-      imageUrl: '/category-festive.jpg',
-    },
-  ];
+  // Live categories directly from real connected database
+  const displayCategories = Array.isArray(categories) ? categories : [];
 
   return (
     <section 
@@ -90,7 +61,7 @@ export const ShopByCategory = ({ onSelectCategory }) => {
                 >
                   {/* Category Image */}
                   <img
-                    src={cat.imageUrl}
+                    src={cat.imageUrl || cat.image || '/category-kurtas.jpg'}
                     alt={cat.name}
                     className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
                     loading="lazy"
