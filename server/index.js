@@ -1088,7 +1088,7 @@ async function startServer() {
   }
 
   app.listen(PORT, () => {
-    console.log(`🚀 [Server] Pooja Lace HUB API running on port ${PORT}`);
+    console.log(`🚀 [Server] House of Taaga API running on port ${PORT}`);
   });
 }
 
