@@ -19,6 +19,10 @@ export const ShopByCategory = ({ onSelectCategory }) => {
   // Live categories directly from real connected database
   const displayCategories = Array.isArray(categories) ? categories : [];
 
+  if (displayCategories.length === 0) {
+    return null;
+  }
+
   return (
     <section 
       id="category-section" 

@@ -68,35 +68,37 @@ export const ProductCatalog = () => {
           subtitle="FRESH FROM THE PUNE STUDIO • LIMITED ARTISANAL RUNS"
         />
 
-        {/* Minimal Category Filter Pills */}
-        <div className="flex items-center justify-center gap-2 sm:gap-3 overflow-x-auto py-2 mb-8 scrollbar-none no-scrollbar">
-          <button
-            onClick={() => setActiveCategory('all')}
-            className={`px-4 py-1.5 rounded-full text-xs font-sans font-medium tracking-wider uppercase transition-all cursor-pointer whitespace-nowrap ${
-              activeCategory === 'all'
-                ? 'bg-[#B65A37] text-[#FFF9F2] shadow-xs'
-                : 'bg-white/80 text-[#382017] hover:bg-white border border-[#E8D9C8]'
-            }`}
-          >
-            All Pieces
-          </button>
-          {categories.map((c) => {
-            const isSelected = activeCategory === c.slug;
-            return (
-              <button
-                key={c.id || c.slug}
-                onClick={() => setActiveCategory(c.slug)}
-                className={`px-4 py-1.5 rounded-full text-xs font-sans font-medium tracking-wider uppercase transition-all cursor-pointer whitespace-nowrap ${
-                  isSelected
-                    ? 'bg-[#B65A37] text-[#FFF9F2] shadow-xs'
-                    : 'bg-white/80 text-[#382017] hover:bg-white border border-[#E8D9C8]'
-                }`}
-              >
-                {c.name}
-              </button>
-            );
-          })}
-        </div>
+        {/* Minimal Category Filter Pills (rendered dynamically if categories exist) */}
+        {categories.length > 0 && (
+          <div className="flex items-center justify-center gap-2 sm:gap-3 overflow-x-auto py-2 mb-8 scrollbar-none no-scrollbar">
+            <button
+              onClick={() => setActiveCategory('all')}
+              className={`px-4 py-1.5 rounded-full text-xs font-sans font-medium tracking-wider uppercase transition-all cursor-pointer whitespace-nowrap ${
+                activeCategory === 'all'
+                  ? 'bg-[#B65A37] text-[#FFF9F2] shadow-xs'
+                  : 'bg-white/80 text-[#382017] hover:bg-white border border-[#E8D9C8]'
+              }`}
+            >
+              All Pieces
+            </button>
+            {categories.map((c) => {
+              const isSelected = activeCategory === c.slug;
+              return (
+                <button
+                  key={c.id || c.slug}
+                  onClick={() => setActiveCategory(c.slug)}
+                  className={`px-4 py-1.5 rounded-full text-xs font-sans font-medium tracking-wider uppercase transition-all cursor-pointer whitespace-nowrap ${
+                    isSelected
+                      ? 'bg-[#B65A37] text-[#FFF9F2] shadow-xs'
+                      : 'bg-white/80 text-[#382017] hover:bg-white border border-[#E8D9C8]'
+                  }`}
+                >
+                  {c.name}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* 
           Mobile Product Grid:

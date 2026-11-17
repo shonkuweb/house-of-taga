@@ -1,121 +1,119 @@
-# Deployment Guide: Kundan Works on VPS with PostgreSQL
+# Deployment Guide: House of Taaga on Shared VPS
 
-This guide explains how to deploy the full-stack **Pooja Lace HUB** application with **PostgreSQL Database** and **REST API** on your VPS alongside your other projects and connect it with **`demo.shonku.site`**.
+This guide explains how to deploy the full-stack **House of Taaga** application with **PostgreSQL Database** and **Node.js Express REST API** in Docker on your VPS alongside other projects without any port, container, network, or volume conflicts.
 
 ---
 
 ## 🏗️ Architecture on Multi-Project VPS
 
-The application runs as an isolated 3-service Docker Compose stack:
-1. **`kundanworks-db`**: PostgreSQL 16 Alpine with persistent volume `kundan_postgres_data`.
-2. **`kundanworks-api`**: Node.js Express REST API (`/api/products`, `/api/orders`, `/api/categories`, etc.) with image uploads volume `kundan_uploads_data`.
-3. **`kundanworks-web`**: Alpine Nginx container serving the built React SPA and proxying `/api/` and `/uploads/` to the backend.
+The application runs as a fully isolated, namespaced 3-service Docker Compose stack:
+1. **`houseoftaaga-db`**: PostgreSQL 16 Alpine with isolated persistent volume `houseoftaaga_postgres_data`.
+2. **`houseoftaaga-api`**: Node.js Express REST API (`/api/products`, `/api/orders`, `/api/categories`, etc.) with media uploads volume `houseoftaaga_uploads_data` and file store volume `houseoftaaga_store_data`.
+3. **`houseoftaaga-web`**: Alpine Nginx container serving the built React SPA and proxying `/api/` and `/uploads/` to `houseoftaaga-api:5000`. Exposes port `3050` (or your chosen `PORT` in `.env`) to the host VPS.
 
 ```
  Internet (HTTPS)
        │
        ▼
-[DNS: demo.shonku.site] ──> [ VPS Public IP ]
-                                          │
-                                          ▼
-                                   [ Host Nginx / NPM ]
-                                          │
-                                 (proxy_pass :3040)
-                                          │
-                                          ▼
-                         [ Docker: kundanworks-web ]
-                                ├── Static Frontend SPA (React)
-                                └── Reverse Proxy /api/* & /uploads/*
-                                          │
-                                          ▼
-                         [ Docker: kundanworks-api ]
-                               (Node.js / Express)
-                                          │
-                                          ▼
-                         [ Docker: kundanworks-db ]
-                               (PostgreSQL 16)
-                                          │
-                                  [ Named Volume ]
+[ Your Domain ] ──> [ VPS Public IP ]
+                             │
+                             ▼
+                    [ Host Nginx / Traefik / Caddy Reverse Proxy ]
+                             │
+                    (proxy_pass :3050)
+                             │
+                             ▼
+           [ Docker: houseoftaaga-web (:3050 -> container :80) ]
+                  ├── Static Frontend SPA (React)
+                  └── Reverse Proxy /api/* & /uploads/*
+                             │
+                             ▼
+           [ Docker: houseoftaaga-api (internal :5000) ]
+                  └── Node.js / Express REST API
+                             │
+                             ▼
+           [ Docker: houseoftaaga-db (internal :5432) ]
+                  └── PostgreSQL 16 Alpine
 ```
 
 ---
 
-## 🚀 Quick Deployment (3 Simple Steps)
+## 🔒 Isolation Guarantees for Shared VPS
 
-### Step 1: DNS Setup (for `demo.shonku.site`)
-Log in to your DNS provider (Cloudflare, Namecheap, GoDaddy, or Hostinger DNS):
-1. Add an **A Record**:
-   - **Type**: `A`
-   - **Name**: `demo` (or `demo.shonku.site`)
-   - **Target / Value**: Your VPS Public IPv4 address
-   - **TTL**: Auto or 300s
-2. If using Cloudflare, set proxy (Orange Cloud) **ON** for automatic SSL and CDN caching.
+When hosting multiple Docker apps on one VPS:
+- **No container name clashes**: Containers are explicitly named `houseoftaaga-web`, `houseoftaaga-api`, and `houseoftaaga-db`.
+- **No volume collisions**: Dedicated named volumes `houseoftaaga_postgres_data`, `houseoftaaga_uploads_data`, `houseoftaaga_store_data`.
+- **No internal network overlap**: Dedicated bridge network `houseoftaaga-net`.
+- **Configurable host port**: Host port defaults to `3050` (instead of common 80, 443, 3000, 3040, 5000). You can change `PORT=...` in your `.env` file to any free port anytime.
+- **Zero hardcoded catalog**: All products and categories are 100% dynamic. You can manage, add, edit, or delete them directly from the Admin Panel.
 
 ---
 
-### Step 2: Clone & Launch on Your VPS
+## 🚀 Quick Deployment (3 Steps)
 
-On your VPS terminal:
+### Step 1: Clone Repository on Your VPS
 
 ```bash
-# 1. Clone repository
-git clone https://github.com/shonkuweb/kundanworks.git /var/www/kundanworks
-cd /var/www/kundanworks
-
-# 2. Configure environment (optional, defaults already work out of the box)
-cp .env.example .env
-
-# 3. Run automated deployment
-bash vps/deploy.sh
+git clone https://github.com/shonkuweb/house-of-taga.git /var/www/house-of-taga
+cd /var/www/house-of-taga
 ```
 
-The script will automatically build and spin up:
-- PostgreSQL 16 container with automatic schema migrations
-- Express API server
-- React production bundle with Nginx reverse proxy
+### Step 2: Configure Environment
+
+```bash
+cp .env.example .env
+```
+
+If port `3050` is already in use by another project on your VPS, simply edit `.env`:
+```env
+PORT=3055
+```
+
+### Step 3: Launch Docker Stack
+
+```bash
+docker compose up -d --build
+```
 
 Verify status:
 ```bash
 docker compose ps
-curl http://127.0.0.1:3040/api/healthz
-# Output: {"status":"healthy","database":"connected",...}
+curl http://127.0.0.1:3050/api/healthz
+# Expected output: {"status":"healthy","database":"connected",...}
 ```
 
 ---
 
-### Step 3: Connect Domain `demo.shonku.site`
+## 🌐 Connecting Your Domain (Host Reverse Proxy)
 
-#### Option A: Host Nginx (Recommended)
+If you have an existing Nginx instance on your VPS handling domain routing and SSL:
+
 ```bash
-# 1. Copy virtual host configuration
-sudo cp vps/demo.shonku.site.conf /etc/nginx/sites-available/
+# 1. Copy sample configuration
+sudo cp vps/demo.shonku.site.conf /etc/nginx/sites-available/houseoftaaga.conf
 
-# 2. Enable the site
-sudo ln -sf /etc/nginx/sites-available/demo.shonku.site.conf /etc/nginx/sites-enabled/
+# 2. Update domain name and port in the conf if needed
+sudo nano /etc/nginx/sites-available/houseoftaaga.conf
 
-# 3. Test and reload Nginx
+# 3. Enable site
+sudo ln -sf /etc/nginx/sites-available/houseoftaaga.conf /etc/nginx/sites-enabled/
+
+# 4. Test and reload Nginx
 sudo nginx -t && sudo systemctl reload nginx
 
-# 4. Generate free SSL Certificate with Certbot
-sudo certbot --nginx -d demo.shonku.site
+# 5. Issue free SSL Certificate with Certbot
+sudo certbot --nginx -d yourdomain.com
 ```
-
-#### Option B: Nginx Proxy Manager (GUI)
-1. Add Proxy Host for `demo.shonku.site`
-2. Forward Hostname: `127.0.0.1`, Port: `3040`
-3. Request SSL Certificate with Force SSL.
 
 ---
 
-## 💾 Database Backups
+## 🔑 Admin Panel Access
 
-Because PostgreSQL uses a named Docker volume (`kundan_postgres_data`), all your products, customer orders, and tracking statuses persist permanently across container rebuilds and server reboots.
-
-To backup your database at any time:
-```bash
-docker exec -t kundanworks-db pg_dump -U kundan_admin kundanworks > backup_$(date +%F).sql
-```
-To restore a backup:
-```bash
-cat backup.sql | docker exec -i kundanworks-db psql -U kundan_admin -d kundanworks
-```
+1. Open your browser to `/` and click the **Admin** shield icon in the top navigation or footer.
+2. Default credentials:
+   - **Password**: `taagaadmin2026` (can be changed anytime in Admin > Settings)
+3. You can manage:
+   - **Categories**: Create parent collections and subcategories with custom photos and banners.
+   - **Products**: Add products with multiple gallery photos, descriptions, sizes, tags, and stock.
+   - **Orders**: View live orders and update fulfillment stages (Confirmed -> Packed -> Shipped -> Delivered).
+   - **Store Settings**: Customize WhatsApp order number, store name, studio address, announcement banner, and delivery options.

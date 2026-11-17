@@ -13,46 +13,40 @@ export const ORDER_STAGES = [
 ];
 
 export const StoreProvider = ({ children }) => {
-  // 1. Initial State from localStorage (instant render without flicker)
+  // 1. Initial State from localStorage (purely dynamic, no hardcoded fallbacks)
   const [categories, setCategories] = useState(() => {
     try {
-      const saved = localStorage.getItem('kundan_categories');
+      const saved = localStorage.getItem('taaga_categories') || localStorage.getItem('kundan_categories');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const hasTaagaCategories = parsed.some(c => c && (c.slug === 'kurtas' || c.slug === 'festive-edit'));
-          if (hasTaagaCategories) {
-            return parsed;
-          }
+        if (Array.isArray(parsed)) {
+          return parsed;
         }
       }
-      return INITIAL_CATEGORIES;
+      return [];
     } catch {
-      return INITIAL_CATEGORIES;
+      return [];
     }
   });
 
   const [products, setProducts] = useState(() => {
     try {
-      const saved = localStorage.getItem('kundan_products');
+      const saved = localStorage.getItem('taaga_products') || localStorage.getItem('kundan_products');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const hasTaagaProducts = parsed.some(p => p && (p.id?.startsWith('taaga_') || p.categorySlug === 'kurtas' || p.categorySlug === 'festive-edit'));
-          if (hasTaagaProducts) {
-            return parsed;
-          }
+        if (Array.isArray(parsed)) {
+          return parsed;
         }
       }
-      return INITIAL_PRODUCTS;
+      return [];
     } catch {
-      return INITIAL_PRODUCTS;
+      return [];
     }
   });
 
   const [orders, setOrders] = useState(() => {
     try {
-      const saved = localStorage.getItem('kundan_orders');
+      const saved = localStorage.getItem('taaga_orders') || localStorage.getItem('kundan_orders');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
@@ -60,9 +54,9 @@ export const StoreProvider = ({ children }) => {
           return parsed.filter(o => o && !legacyDummyIds.includes(o.id));
         }
       }
-      return INITIAL_ORDERS;
+      return [];
     } catch {
-      return INITIAL_ORDERS;
+      return [];
     }
   });
 
@@ -312,7 +306,7 @@ export const StoreProvider = ({ children }) => {
   // Sync to local storage for offline resiliency
   useEffect(() => {
     try {
-      localStorage.setItem('kundan_categories', JSON.stringify(categories));
+      localStorage.setItem('taaga_categories', JSON.stringify(categories));
     } catch (err) {
       console.error('Failed to persist categories', err);
     }
@@ -320,7 +314,7 @@ export const StoreProvider = ({ children }) => {
 
   useEffect(() => {
     try {
-      localStorage.setItem('kundan_products', JSON.stringify(products));
+      localStorage.setItem('taaga_products', JSON.stringify(products));
     } catch (err) {
       console.error('Failed to persist products', err);
     }
@@ -328,7 +322,7 @@ export const StoreProvider = ({ children }) => {
 
   useEffect(() => {
     try {
-      localStorage.setItem('kundan_cart', JSON.stringify(cart));
+      localStorage.setItem('taaga_cart', JSON.stringify(cart));
     } catch (err) {
       console.error('Failed to persist cart', err);
     }
@@ -336,7 +330,7 @@ export const StoreProvider = ({ children }) => {
 
   useEffect(() => {
     try {
-      localStorage.setItem('kundan_config', JSON.stringify(storeConfig));
+      localStorage.setItem('taaga_config', JSON.stringify(storeConfig));
     } catch (err) {
       console.error('Failed to persist config', err);
     }
@@ -344,7 +338,7 @@ export const StoreProvider = ({ children }) => {
 
   useEffect(() => {
     try {
-      localStorage.setItem('kundan_orders', JSON.stringify(orders));
+      localStorage.setItem('taaga_orders', JSON.stringify(orders));
     } catch (err) {
       console.error('Failed to persist orders', err);
     }

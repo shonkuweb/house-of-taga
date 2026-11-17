@@ -188,8 +188,8 @@ export const AdminPanel = ({ onClose }) => {
   const [productForm, setProductForm] = useState({
     title: '',
     categoryIds: [],
-    category: 'Kurtas',
-    categorySlug: 'kurtas',
+    category: '',
+    categorySlug: '',
     price: '',
     originalPrice: '',
     primaryImage: '',
@@ -198,10 +198,10 @@ export const AdminPanel = ({ onClose }) => {
     description: '',
     careTips: '',
     deliveryReturns: '',
-    replacement: '7-day live plant guarantee',
+    replacement: '7-day easy exchange guarantee',
     delivery: 'Ships across India in 3-5 days',
-    guidance: 'Lifetime WhatsApp gardening advice',
-    packaging: '5-layer corrugated ventilated box',
+    guidance: 'WhatsApp sizing & styling guidance',
+    packaging: 'Eco-friendly boutique keepsake box',
     soldInLast24Hours: '',
     showSampleReviews: true,
     inStock: true
@@ -428,12 +428,12 @@ export const AdminPanel = ({ onClose }) => {
   // Product Handlers (Supporting all areas from reference screenshots)
   const handleOpenAddProduct = () => {
     setEditingProductId(null);
-    const defaultCatIds = categories.length > 0 ? [categories[0].id || categories[0].slug] : ['kurtas'];
+    const defaultCatIds = categories.length > 0 ? [categories[0].id || categories[0].slug] : [];
     setProductForm({
       title: '',
       categoryIds: defaultCatIds,
-      category: categories[0]?.name || 'Kurtas',
-      categorySlug: categories[0]?.slug || 'kurtas',
+      category: categories[0]?.name || '',
+      categorySlug: categories[0]?.slug || '',
       price: '',
       originalPrice: '',
       primaryImage: '',
@@ -442,10 +442,10 @@ export const AdminPanel = ({ onClose }) => {
       description: '',
       careTips: '',
       deliveryReturns: '',
-      replacement: '7-day live plant guarantee',
+      replacement: '7-day easy exchange guarantee',
       delivery: 'Ships across India in 3-5 days',
-      guidance: 'Lifetime WhatsApp gardening advice',
-      packaging: '5-layer corrugated ventilated box',
+      guidance: 'WhatsApp sizing & styling guidance',
+      packaging: 'Eco-friendly boutique keepsake box',
       soldInLast24Hours: '',
       showSampleReviews: true,
       inStock: true
@@ -464,8 +464,8 @@ export const AdminPanel = ({ onClose }) => {
     setProductForm({
       title: prod.title || prod.name || '',
       categoryIds: catIds,
-      category: prod.category || 'Kurtas',
-      categorySlug: prod.categorySlug || 'kurtas',
+      category: prod.category || (categories[0]?.name || ''),
+      categorySlug: prod.categorySlug || (categories[0]?.slug || ''),
       price: prod.price !== undefined ? String(prod.price) : '',
       originalPrice: prod.originalPrice !== undefined ? String(prod.originalPrice) : '',
       primaryImage: existingImages[0] || prod.imageUrl || '',
@@ -474,10 +474,10 @@ export const AdminPanel = ({ onClose }) => {
       description: prod.description || '',
       careTips: prod.careTips || prod.fabricCare || '',
       deliveryReturns: prod.deliveryReturns || '',
-      replacement: prod.highlights?.replacement || '7-day live plant guarantee',
+      replacement: prod.highlights?.replacement || '7-day easy exchange guarantee',
       delivery: prod.highlights?.delivery || 'Ships across India in 3-5 days',
-      guidance: prod.highlights?.guidance || 'Lifetime WhatsApp gardening advice',
-      packaging: prod.highlights?.packaging || '5-layer corrugated ventilated box',
+      guidance: prod.highlights?.guidance || 'WhatsApp sizing & styling guidance',
+      packaging: prod.highlights?.packaging || 'Eco-friendly boutique keepsake box',
       soldInLast24Hours: prod.highlights?.sold24h || '',
       showSampleReviews: prod.showSampleReviews ?? true,
       inStock: prod.inStock !== false && (prod.stock === undefined || Number(prod.stock) > 0)
@@ -1134,8 +1134,8 @@ export const AdminPanel = ({ onClose }) => {
                   <div className="text-xl sm:text-2xl font-bold text-[#1C1E21]">
                     {categories.length}
                   </div>
-                  <p className="text-[11px] text-neutral-500 mt-1 font-medium">
-                    Kurtas, Sarees, Co-ords, Festive
+                  <p className="text-[11px] text-neutral-500 mt-1 font-medium truncate">
+                    {categories.length > 0 ? categories.slice(0, 4).map(c => c.name).join(', ') : 'No categories yet'}
                   </p>
                 </div>
 
@@ -3258,7 +3258,7 @@ export const AdminPanel = ({ onClose }) => {
                     required
                     value={categoryForm.name}
                     onChange={(e) => setCategoryForm(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="e.g. Kurtas, Sarees, Festive Edit"
+                    placeholder="e.g. Sarees, Kurtas, Anarkalis"
                     className="w-full px-4 py-3 bg-white border border-[#CBD5E1] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37] placeholder:text-neutral-400 text-[#1C1E21]"
                   />
                 </div>

@@ -7,7 +7,7 @@ const { Pool } = pg;
 
 // Connection configuration
 const connectionString = process.env.DATABASE_URL || 
-  `postgres://${process.env.POSTGRES_USER || 'kundan_admin'}:${process.env.POSTGRES_PASSWORD || 'kundan_secure_pass_2026'}@${process.env.POSTGRES_HOST || 'kundanworks-db'}:${process.env.POSTGRES_PORT || 5432}/${process.env.POSTGRES_DB || 'kundanworks'}`;
+  `postgres://${process.env.POSTGRES_USER || 'taaga_admin'}:${process.env.POSTGRES_PASSWORD || 'taaga_secure_pass_2026'}@${process.env.POSTGRES_HOST || 'houseoftaaga-db'}:${process.env.POSTGRES_PORT || 5432}/${process.env.POSTGRES_DB || 'houseoftaaga'}`;
 
 export const pool = new Pool({
   connectionString,
@@ -118,7 +118,7 @@ export async function initDB(maxRetries = 1, delayMs = 300) {
             stage INTEGER DEFAULT 1,
             status TEXT DEFAULT 'Order Placed',
             status_title TEXT DEFAULT 'Order Placed & Logged',
-            status_description TEXT DEFAULT 'Your order has been recorded in the Pooja Lace HUB boutique system.',
+            status_description TEXT DEFAULT 'Your order has been recorded in the House of Taaga boutique system.',
             courier_name TEXT DEFAULT 'Boutique Express Logistics',
             awb_number TEXT DEFAULT '',
             estimated_delivery TEXT DEFAULT 'Estimated 4-6 business days',

@@ -9,8 +9,8 @@ RUN npm install --production
 # Copy server code
 COPY . .
 
-# Ensure uploads directory exists
-RUN mkdir -p /app/uploads
+# Ensure uploads and data directories exist
+RUN mkdir -p /app/uploads /app/data
 
 EXPOSE 5000
 

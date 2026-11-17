@@ -4,78 +4,81 @@ services:
   # ==========================================
   # 1. PostgreSQL Database Service
   # ==========================================
-  kundanworks-db:
+  houseoftaaga-db:
     image: postgres:16-alpine
-    container_name: kundanworks-db
+    container_name: houseoftaaga-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-kundanworks}
-      POSTGRES_USER: ${POSTGRES_USER:-kundan_admin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kundan_secure_pass_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-houseoftaaga}
+      POSTGRES_USER: ${POSTGRES_USER:-taaga_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-taaga_secure_pass_2026}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kundan_admin} -d ${POSTGRES_DB:-kundanworks}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-taaga_admin} -d ${POSTGRES_DB:-houseoftaaga}"]
       interval: 5s
       timeout: 5s
       retries: 5
     networks:
-      - kundan-net
+      - houseoftaaga-net
 
   # ==========================================
   # 2. Node.js Express REST API Service
   # ==========================================
-  kundanworks-api:
+  houseoftaaga-api:
     build:
       context: ./server
       dockerfile: Dockerfile
-    container_name: kundanworks-api
+    container_name: houseoftaaga-api
     restart: unless-stopped
     environment:
       NODE_ENV: production
       PORT: 5000
-      POSTGRES_HOST: kundanworks-db
+      POSTGRES_HOST: houseoftaaga-db
       POSTGRES_PORT: 5432
-      POSTGRES_DB: ${POSTGRES_DB:-kundanworks}
-      POSTGRES_USER: ${POSTGRES_USER:-kundan_admin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kundan_secure_pass_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-houseoftaaga}
+      POSTGRES_USER: ${POSTGRES_USER:-taaga_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-taaga_secure_pass_2026}
     volumes:
       - uploads_data:/app/uploads
+      - store_data:/app/data
     depends_on:
-      kundanworks-db:
+      houseoftaaga-db:
         condition: service_healthy
     networks:
-      - kundan-net
+      - houseoftaaga-net
 
   # ==========================================
   # 3. Nginx Web & Reverse Proxy Service
   # ==========================================
-  kundanworks-web:
+  houseoftaaga-web:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: kundanworks-app
+    container_name: houseoftaaga-web
     restart: unless-stopped
     ports:
-      # Host port 3040 maps to internal container port 80.
-      # You can change PORT in your .env file on the VPS if 3040 is occupied.
-      - "${PORT:-3040}:80"
+      # Host HTTP Port on VPS (mapped to container's internal port 80).
+      # If port 3050 is in use by another app on your VPS, change PORT in .env
+      - "${PORT:-3050}:80"
     environment:
       - NODE_ENV=production
     depends_on:
-      - kundanworks-api
+      - houseoftaaga-api
     labels:
-      - "project=poojalacehub"
-      - "domain=demo.shonku.site"
+      - "project=houseoftaaga"
     networks:
-      - kundan-net
+      - houseoftaaga-net
 
 volumes:
   postgres_data:
-    name: kundan_postgres_data
+    name: houseoftaaga_postgres_data
   uploads_data:
-    name: kundan_uploads_data
+    name: houseoftaaga_uploads_data
+  store_data:
+    name: houseoftaaga_store_data
 
 networks:
-  kundan-net:
+  houseoftaaga-net:
+    name: houseoftaaga-net
     driver: bridge

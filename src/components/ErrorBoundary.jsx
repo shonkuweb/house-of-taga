@@ -19,6 +19,10 @@ export class ErrorBoundary extends React.Component {
   handleReset = () => {
     try {
       // Clear corrupt cache
+      localStorage.removeItem('taaga_products');
+      localStorage.removeItem('taaga_categories');
+      localStorage.removeItem('taaga_cart');
+      localStorage.removeItem('taaga_orders');
       localStorage.removeItem('kundan_products');
       localStorage.removeItem('kundan_categories');
       localStorage.removeItem('kundan_cart');
