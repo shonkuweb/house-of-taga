@@ -27,7 +27,9 @@ export const BottomNavigation = () => {
       setIsCartOpen(prev => !prev);
     } else if (tab === 'contact') {
       setIsCartOpen(false);
-      setIsContactOpen(true);
+      const boutiquePhone = storeConfig?.whatsappNumber || '+91 93133 06258';
+      const cleanPhone = boutiquePhone.replace(/[^0-9]/g, '');
+      window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent('Hello House of Taaga, I would like to get in touch with your Pune studio.')}`, '_blank');
     } else if (tab === 'order') {
       setIsCartOpen(false);
       navigate('/order');

@@ -1,7 +1,13 @@
 import pg from 'pg';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const { Pool } = pg;
 
@@ -29,7 +35,7 @@ export const isDBConnected = () => dbIsReady;
  * Initialize and auto-migrate PostgreSQL tables with retry mechanism.
  * Gives PostgreSQL time to boot in Docker Compose (up to 30-40 seconds).
  */
-export async function initDB(maxRetries = 1, delayMs = 300) {
+export async function initDB(maxRetries = 15, delayMs = 1500) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       console.log(`[DB] Connecting to PostgreSQL (attempt ${attempt}/${maxRetries})...`);
@@ -48,6 +54,13 @@ export async function initDB(maxRetries = 1, delayMs = 300) {
             item_count INTEGER DEFAULT 0,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
           );
+        `);
+
+        // Categories Auto-Migrations
+        await client.query(`
+          ALTER TABLE categories ADD COLUMN IF NOT EXISTS subtitle TEXT DEFAULT '';
+          ALTER TABLE categories ADD COLUMN IF NOT EXISTS parent_id TEXT DEFAULT NULL;
+          ALTER TABLE categories ADD COLUMN IF NOT EXISTS order_index INTEGER DEFAULT 0;
         `);
 
         // 2. Products Table
@@ -70,12 +83,15 @@ export async function initDB(maxRetries = 1, delayMs = 300) {
             sizes JSONB DEFAULT '["Free Size"]'::jsonb,
             tag TEXT DEFAULT '',
             badge_color TEXT DEFAULT '',
+            shipping_scope TEXT DEFAULT 'all_india',
+            allowed_states JSONB DEFAULT '[]'::jsonb,
+            allowed_pincodes JSONB DEFAULT '[]'::jsonb,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
           );
         `);
 
-        // 3. Products Table Auto-Migrations (safely add columns if table previously existed with old schema)
+        // 3. Products Table Auto-Migrations
         await client.query(`
           ALTER TABLE products ADD COLUMN IF NOT EXISTS name TEXT;
           ALTER TABLE products ADD COLUMN IF NOT EXISTS title TEXT;
@@ -93,6 +109,9 @@ export async function initDB(maxRetries = 1, delayMs = 300) {
           ALTER TABLE products ADD COLUMN IF NOT EXISTS sizes JSONB DEFAULT '["Free Size"]'::jsonb;
           ALTER TABLE products ADD COLUMN IF NOT EXISTS tag TEXT DEFAULT '';
           ALTER TABLE products ADD COLUMN IF NOT EXISTS badge_color TEXT DEFAULT '';
+          ALTER TABLE products ADD COLUMN IF NOT EXISTS shipping_scope TEXT DEFAULT 'all_india';
+          ALTER TABLE products ADD COLUMN IF NOT EXISTS allowed_states JSONB DEFAULT '[]'::jsonb;
+          ALTER TABLE products ADD COLUMN IF NOT EXISTS allowed_pincodes JSONB DEFAULT '[]'::jsonb;
           ALTER TABLE products ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
         `);
 
@@ -127,7 +146,7 @@ export async function initDB(maxRetries = 1, delayMs = 300) {
           );
         `);
 
-        // Orders Auto-Migrations for payment & tracking columns
+        // Orders Auto-Migrations
         await client.query(`
           ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT 'UPI';
           ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'Completed';
@@ -146,17 +165,80 @@ export async function initDB(maxRetries = 1, delayMs = 300) {
           );
         `);
 
-        // 6. Performance Indexes
+        // 6. Customers Table (Patron Accounts)
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS customers (
+            id TEXT PRIMARY KEY,
+            full_name TEXT NOT NULL,
+            mobile TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            pincode TEXT DEFAULT '',
+            state TEXT DEFAULT 'Maharashtra',
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+          );
+        `);
+
+        // 7. Performance Indexes
         await client.query(`
           CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
           CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at DESC);
           CREATE INDEX IF NOT EXISTS idx_orders_customer_phone ON orders(customer_phone);
           CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC);
+          CREATE INDEX IF NOT EXISTS idx_customers_mobile ON customers(mobile);
         `);
 
         await client.query('COMMIT');
         dbIsReady = true;
         console.log('✅ [DB] PostgreSQL production database initialized & migrated successfully.');
+
+        // Auto-seed initial catalog if PostgreSQL tables are newly created and empty
+        try {
+          const prodCountRes = await client.query('SELECT COUNT(*) FROM products');
+          if (parseInt(prodCountRes.rows[0].count, 10) === 0) {
+            const seedProdsPath = path.join(__dirname, 'data', 'products.json');
+            if (fs.existsSync(seedProdsPath)) {
+              const prods = JSON.parse(fs.readFileSync(seedProdsPath, 'utf8'));
+              for (const p of prods) {
+                await client.query(`
+                  INSERT INTO products (
+                    id, name, title, subtitle, price, original_price, category, category_slug, 
+                    description, stock, in_stock, images, image_url, shipping_scope, allowed_states, allowed_pincodes
+                  ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+                  ON CONFLICT (id) DO NOTHING
+                `, [
+                  p.id, p.name || p.title, p.title || p.name, p.subtitle || '',
+                  p.price || 0, p.originalPrice || p.price || 0, p.category || 'Kurtas', p.categorySlug || 'kurtas',
+                  p.description || '', p.stock ?? 10, p.inStock ?? true,
+                  JSON.stringify(p.images || [p.imageUrl]), p.imageUrl || '',
+                  p.shippingScope || 'all_india',
+                  JSON.stringify(p.allowedStates || []),
+                  JSON.stringify(p.allowedPincodes || [])
+                ]);
+              }
+              console.log(`[DB] Auto-seeded ${prods.length} products into PostgreSQL.`);
+            }
+          }
+
+          const catCountRes = await client.query('SELECT COUNT(*) FROM categories');
+          if (parseInt(catCountRes.rows[0].count, 10) === 0) {
+            const seedCatsPath = path.join(__dirname, 'data', 'categories.json');
+            if (fs.existsSync(seedCatsPath)) {
+              const cats = JSON.parse(fs.readFileSync(seedCatsPath, 'utf8'));
+              for (const c of cats) {
+                await client.query(`
+                  INSERT INTO categories (id, name, slug, image, item_count)
+                  VALUES ($1, $2, $3, $4, $5)
+                  ON CONFLICT (id) DO NOTHING
+                `, [c.id, c.name, c.slug, c.imageUrl || c.image || '', c.itemCount || 0]);
+              }
+              console.log(`[DB] Auto-seeded ${cats.length} categories into PostgreSQL.`);
+            }
+          }
+        } catch (seedErr) {
+          console.warn('[DB] Auto-seed warning:', seedErr.message);
+        }
+
         return true;
       } catch (err) {
         await client.query('ROLLBACK');
@@ -166,6 +248,11 @@ export async function initDB(maxRetries = 1, delayMs = 300) {
       }
     } catch (error) {
       console.warn(`[DB] Connection attempt ${attempt}/${maxRetries} failed: ${error.message}`);
+      if (error.code === 'ENOTFOUND' && attempt >= 2) {
+        console.warn('⚠️ [DB] Host not found (local development mode). Operating in file-backed fallback mode.');
+        dbIsReady = false;
+        return false;
+      }
       if (attempt === maxRetries) {
         console.warn('⚠️ [DB] PostgreSQL connection timed out after retries. Operating in file-backed fallback mode.');
         dbIsReady = false;

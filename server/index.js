@@ -7,12 +7,13 @@ import { fileURLToPath } from 'url';
 import multer from 'multer';
 import { initDB, query, isDBConnected } from './db.js';
 import { fileStore } from './store.js';
+import { uploadToR2, R2_CONFIG } from './r2.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.API_PORT || (process.env.POSTGRES_HOST === 'houseoftaaga-db' ? 5000 : 5001);
 
 // Ensure upload directory exists
 const uploadDir = path.join(__dirname, 'uploads');
@@ -118,18 +119,67 @@ app.get('/api/healthz', async (req, res) => {
 });
 
 // ==========================================
-// 2. Image Upload Endpoint
+// 2. Image Upload Endpoint (Cloudflare R2 First)
 // ==========================================
-app.post('/api/upload', upload.single('image'), (req, res) => {
+app.post('/api/upload', upload.single('image'), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No image file uploaded' });
+    let buffer = null;
+    let originalName = 'media.jpg';
+    let mimeType = 'image/jpeg';
+
+    if (req.file) {
+      originalName = req.file.originalname || req.file.filename;
+      mimeType = req.file.mimetype || 'image/jpeg';
+      if (req.file.buffer) {
+        buffer = req.file.buffer;
+      } else if (req.file.path) {
+        buffer = fs.readFileSync(req.file.path);
+      }
+    } else if (req.body && req.body.image) {
+      // Support Base64 dataURL payloads
+      const dataUri = req.body.image;
+      const match = dataUri.match(/^data:([A-Za-z0-9\-+/]+);base64,(.+)$/);
+      if (match) {
+        mimeType = match[1];
+        buffer = Buffer.from(match[2], 'base64');
+        const ext = mimeType.split('/')[1] || 'jpg';
+        originalName = req.body.filename || `upload-${Date.now()}.${ext}`;
+      } else {
+        buffer = Buffer.from(dataUri, 'base64');
+        originalName = req.body.filename || `upload-${Date.now()}.jpg`;
+      }
     }
-    const fileUrl = `/uploads/${req.file.filename}`;
-    res.json({ url: fileUrl, filename: req.file.filename });
+
+    if (!buffer) {
+      return res.status(400).json({ error: 'No image file or data provided' });
+    }
+
+    // 1. Primary: Upload directly to Cloudflare R2
+    try {
+      const r2Result = await uploadToR2(buffer, originalName, mimeType, 'house-of-taaga/uploads');
+      return res.json({
+        url: r2Result.url,
+        key: r2Result.key,
+        storage: 'r2',
+        filename: originalName,
+        success: true
+      });
+    } catch (r2Err) {
+      console.warn('[Upload] Cloudflare R2 upload failed, falling back to local storage:', r2Err.message);
+      if (req.file) {
+        const fileUrl = `/uploads/${req.file.filename}`;
+        return res.json({
+          url: fileUrl,
+          filename: req.file.filename,
+          storage: 'local',
+          success: true
+        });
+      }
+      throw r2Err;
+    }
   } catch (error) {
     console.error('Upload error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message || 'Image upload failed' });
   }
 });
 
@@ -495,6 +545,9 @@ app.get('/api/categories', async (req, res) => {
         name, 
         slug, 
         image, 
+        image as "imageUrl",
+        COALESCE(subtitle, '') as subtitle,
+        parent_id as "parentId",
         item_count as "itemCount", 
         created_at as "createdAt"
       FROM categories 
@@ -519,6 +572,9 @@ app.post('/api/categories', async (req, res) => {
       name,
       slug,
       image = '',
+      imageUrl = '',
+      subtitle = '',
+      parentId = null,
       itemCount = 0
     } = req.body;
 
@@ -526,13 +582,14 @@ app.post('/api/categories', async (req, res) => {
       return res.status(400).json({ error: 'Category name is required' });
     }
 
+    const finalImage = imageUrl || image || '';
     const calculatedSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
     const result = await query(`
-      INSERT INTO categories (id, name, slug, image, item_count, created_at)
-      VALUES ($1, $2, $3, $4, $5, NOW())
-      RETURNING id, name, slug, image, item_count as "itemCount", created_at as "createdAt"
-    `, [id, name, calculatedSlug, image, itemCount]);
+      INSERT INTO categories (id, name, slug, image, subtitle, parent_id, item_count, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+      RETURNING id, name, slug, image, image as "imageUrl", subtitle, parent_id as "parentId", item_count as "itemCount", created_at as "createdAt"
+    `, [id, name, calculatedSlug, finalImage, subtitle, parentId, itemCount]);
 
     fileStore.createCategory(result.rows[0]);
     res.status(201).json(result.rows[0]);
@@ -552,17 +609,20 @@ app.put('/api/categories/:id', async (req, res) => {
     return res.json(updated);
   }
   try {
-    const { name, slug, image, itemCount } = req.body;
+    const { name, slug, image, imageUrl, subtitle, parentId, itemCount } = req.body;
+    const finalImage = imageUrl !== undefined ? imageUrl : image;
 
     const result = await query(`
       UPDATE categories SET
         name = COALESCE($1, name),
         slug = COALESCE($2, slug),
         image = COALESCE($3, image),
-        item_count = COALESCE($4, item_count)
-      WHERE id = $5
-      RETURNING id, name, slug, image, item_count as "itemCount", created_at as "createdAt"
-    `, [name, slug, image, itemCount, id]);
+        subtitle = COALESCE($4, subtitle),
+        parent_id = COALESCE($5, parent_id),
+        item_count = COALESCE($6, item_count)
+      WHERE id = $7
+      RETURNING id, name, slug, image, image as "imageUrl", subtitle, parent_id as "parentId", item_count as "itemCount", created_at as "createdAt"
+    `, [name, slug, finalImage, subtitle, parentId, itemCount, id]);
 
     if (result.rows.length === 0) {
       const updated = fileStore.updateCategory(id, req.body);

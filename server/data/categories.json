@@ -4,7 +4,7 @@
     "name": "Kurtas",
     "slug": "kurtas",
     "subtitle": "Everyday Grace & Silhouettes",
-    "imageUrl": "/category-kurtas.jpg",
+    "imageUrl": "https://pub-ce8688bc6c654bcfb99716f7c9373bcd.r2.dev/house-of-taaga/assets/category-kurtas.jpg",
     "order": 1
   },
   {
@@ -12,7 +12,7 @@
     "name": "Sarees",
     "slug": "sarees",
     "subtitle": "Six Yards of Handwoven Poetry",
-    "imageUrl": "/category-sarees.jpg",
+    "imageUrl": "https://pub-ce8688bc6c654bcfb99716f7c9373bcd.r2.dev/house-of-taaga/assets/category-sarees.jpg",
     "order": 2
   },
   {
@@ -20,7 +20,7 @@
     "name": "Co-ord Sets",
     "slug": "coord-sets",
     "subtitle": "Modern Ease & Artisanal Cuts",
-    "imageUrl": "/category-coord.jpg",
+    "imageUrl": "https://pub-ce8688bc6c654bcfb99716f7c9373bcd.r2.dev/house-of-taaga/assets/category-coord.jpg",
     "order": 3
   },
   {
@@ -28,7 +28,7 @@
     "name": "Festive Edit",
     "slug": "festive-edit",
     "subtitle": "Heirloom Silks & Zari Details",
-    "imageUrl": "/category-festive.jpg",
+    "imageUrl": "https://pub-ce8688bc6c654bcfb99716f7c9373bcd.r2.dev/house-of-taaga/assets/category-festive.jpg",
     "order": 4
   }
 ]

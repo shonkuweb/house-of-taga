@@ -5,11 +5,10 @@ import { Header } from './components/Header';
 import { HomePage } from './pages/HomePage';
 import { ProductPage } from './pages/ProductPage';
 import { CheckoutPage } from './pages/CheckoutPage';
+import { AccountPage } from './pages/AccountPage';
 import { OrderSection } from './components/OrderSection';
 import { AdminPanel } from './components/AdminPanel';
 import { CartDrawer } from './components/CartDrawer';
-import { ContactModal } from './components/ContactModal';
-import { AboutModal } from './components/AboutModal';
 import { Sparkles } from 'lucide-react';
 
 const Layout = () => {
@@ -39,6 +38,7 @@ const Layout = () => {
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/account" element={<AccountPage />} />
           <Route path="/admin" element={<AdminPanel onClose={() => setIsAdminOpen(false)} />} />
           <Route path="/product/:id" element={<ProductPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
@@ -48,11 +48,9 @@ const Layout = () => {
         </Routes>
       </main>
 
-      {/* Modals & Slide Drawers */}
+      {/* Modals & Slide Drawers (No popups for About or Contact) */}
       {isAdminOpen && <AdminPanel onClose={() => setIsAdminOpen(false)} />}
       <CartDrawer />
-      <ContactModal />
-      <AboutModal />
 
     </div>
   );

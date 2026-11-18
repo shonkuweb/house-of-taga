@@ -16,10 +16,10 @@
     "sku": "HT-KURT-01",
     "stock": 12,
     "inStock": true,
-    "imageUrl": "/category-kurtas.jpg",
+    "imageUrl": "https://pub-ce8688bc6c654bcfb99716f7c9373bcd.r2.dev/house-of-taaga/assets/category-kurtas.jpg",
     "images": [
-      "/category-kurtas.jpg",
-      "/founders.jpg"
+      "https://pub-ce8688bc6c654bcfb99716f7c9373bcd.r2.dev/house-of-taaga/assets/category-kurtas.jpg",
+      "https://pub-ce8688bc6c654bcfb99716f7c9373bcd.r2.dev/house-of-taaga/assets/founders.jpg"
     ],
     "description": "An ode to timeless craftsmanship, this radiant mustard yellow kurta is handcrafted in artisanal Bandhani resist-dye with intricate golden zari hand-embroidery adorning the split neckline and cuffs. Paired with straight-cut cotton silk pants and lightweight mulmul dupatta with playful handmade tassels.",
     "fabric": "Pure Modal Bandhani with Butter Cotton Lining",
@@ -57,10 +57,10 @@
     "sku": "HT-KAFT-02",
     "stock": 8,
     "inStock": true,
-    "imageUrl": "/category-festive.jpg",
+    "imageUrl": "https://pub-ce8688bc6c654bcfb99716f7c9373bcd.r2.dev/house-of-taaga/assets/category-festive.jpg",
     "images": [
-      "/category-festive.jpg",
-      "/founders.jpg"
+      "https://pub-ce8688bc6c654bcfb99716f7c9373bcd.r2.dev/house-of-taaga/assets/category-festive.jpg",
+      "https://pub-ce8688bc6c654bcfb99716f7c9373bcd.r2.dev/house-of-taaga/assets/founders.jpg"
     ],
     "description": "Worn by co-founder Neeta in our Pune studio, this royal mulberry purple kaftan kurta features a rich yoke of intricate threadwork, gota border detailing, and delicate mirror highlights. Effortlessly regal yet supremely comfortable for festive gatherings and intimate evenings.",
     "fabric": "Silk Viscose Satin with Hand-Embroidered Yoke",
@@ -98,9 +98,9 @@
     "sku": "HT-SAREE-03",
     "stock": 6,
     "inStock": true,
-    "imageUrl": "/category-sarees.jpg",
+    "imageUrl": "https://pub-ce8688bc6c654bcfb99716f7c9373bcd.r2.dev/house-of-taaga/assets/category-sarees.jpg",
     "images": [
-      "/category-sarees.jpg"
+      "https://pub-ce8688bc6c654bcfb99716f7c9373bcd.r2.dev/house-of-taaga/assets/category-sarees.jpg"
     ],
     "description": "Woven with whisper-light Chanderi silk and fine cotton warp, this saree features delicate hand-woven lotus bootis in antique golden zari, framed by a soft scalloped border in rosewood terracotta. Includes unstitched blouse fabric.",
     "fabric": "Handloom Chanderi Silk Cotton with Golden Zari Weave",
@@ -138,9 +138,9 @@
     "sku": "HT-COORD-04",
     "stock": 15,
     "inStock": true,
-    "imageUrl": "/category-coord.jpg",
+    "imageUrl": "https://pub-ce8688bc6c654bcfb99716f7c9373bcd.r2.dev/house-of-taaga/assets/category-coord.jpg",
     "images": [
-      "/category-coord.jpg"
+      "https://pub-ce8688bc6c654bcfb99716f7c9373bcd.r2.dev/house-of-taaga/assets/category-coord.jpg"
     ],
     "description": "Designed for effortless everyday elegance, this two-piece co-ord set in rustic earthy terracotta combines a relaxed Mandarin-collar tunic with deep front pocket details and tailored wide-leg trousers with an elasticated waistband.",
     "fabric": "100% Breathable Slub Cotton Linen",
@@ -178,10 +178,10 @@
     "sku": "HT-ANAR-05",
     "stock": 9,
     "inStock": true,
-    "imageUrl": "/founders.jpg",
+    "imageUrl": "https://pub-ce8688bc6c654bcfb99716f7c9373bcd.r2.dev/house-of-taaga/assets/founders.jpg",
     "images": [
-      "/founders.jpg",
-      "/category-kurtas.jpg"
+      "https://pub-ce8688bc6c654bcfb99716f7c9373bcd.r2.dev/house-of-taaga/assets/founders.jpg",
+      "https://pub-ce8688bc6c654bcfb99716f7c9373bcd.r2.dev/house-of-taaga/assets/category-kurtas.jpg"
     ],
     "description": "Crafted in soft mulmul cotton with an ethereal 24-kali flare, finished with subtle marigold edging and delicate gota patti work along the hemline. Comes complete with churidar pants and a lightweight Kota Doria dupatta.",
     "fabric": "Pure Mulmul Cotton with Fine Gota Patti Detailing",
@@ -219,9 +219,9 @@
     "sku": "HT-PAITH-06",
     "stock": 5,
     "inStock": true,
-    "imageUrl": "/category-festive.jpg",
+    "imageUrl": "https://pub-ce8688bc6c654bcfb99716f7c9373bcd.r2.dev/house-of-taaga/assets/category-festive.jpg",
     "images": [
-      "/category-festive.jpg"
+      "https://pub-ce8688bc6c654bcfb99716f7c9373bcd.r2.dev/house-of-taaga/assets/category-festive.jpg"
     ],
     "description": "Inspired by the royal courts and gardens of historical Pune, this heritage silk brocade saree weaves traditional floral vine meenakari into deep jewel tones with an opulent antique zari pallu. An heirloom keepsake for festive milestones.",
     "fabric": "Pure Woven Silk Brocade with Antiqued Zari",

@@ -196,7 +196,7 @@ export const CartDrawer = () => {
             <div className="space-y-1.5 text-xs text-[#52443A]">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span className="font-serif font-medium text-neutral-800">₹{cartSubtotal.toLocaleString('en-IN')}</span>
+                <span className="font-sans font-semibold text-neutral-800 tabular-nums">₹{cartSubtotal.toLocaleString('en-IN')}</span>
               </div>
               <div className="flex justify-between">
                 <span>Delivery</span>
@@ -204,7 +204,7 @@ export const CartDrawer = () => {
               </div>
               <div className="flex justify-between text-sm font-semibold text-[#221B16] pt-2 border-t border-[#EAE0D4]">
                 <span>Total Amount</span>
-                <span className="font-serif text-base font-bold">₹{cartSubtotal.toLocaleString('en-IN')}</span>
+                <span className="font-sans text-base font-bold text-[#5C061C] tabular-nums">₹{cartSubtotal.toLocaleString('en-IN')}</span>
               </div>
             </div>
 

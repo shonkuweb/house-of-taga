@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
-  ArrowLeft, 
   ShoppingBag, 
   ArrowRight, 
   Plus, 
@@ -10,21 +9,44 @@ import {
   ChevronRight, 
   Maximize2, 
   X, 
-  Camera 
+  Camera,
+  Heart,
+  Share2,
+  Truck,
+  ShieldCheck,
+  Sparkles,
+  Phone
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { FashionPlaceholder } from '../components/Placeholders';
+import { Footer } from '../components/Footer';
 
 export const ProductPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { products, addToCart, setIsCartOpen } = useStore();
+  const { 
+    products, 
+    addToCart, 
+    setIsCartOpen, 
+    isWishlisted, 
+    toggleWishlist,
+    storeConfig,
+    showToast 
+  } = useStore();
 
   const product = products.find(p => p.id === id || p.slug === id);
 
   const [quantity, setQuantity] = useState(1);
+  const [selectedSize, setSelectedSize] = useState('M');
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  // Available apparel sizes
+  const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+
+  const phone = storeConfig?.whatsappNumber || '+91 93133 06258';
+  const cleanPhone = phone.replace(/[^0-9]/g, '');
 
   // Scroll to top and reset gallery when product changes
   useEffect(() => {
@@ -94,22 +116,30 @@ export const ProductPage = () => {
 
   if (!product) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
-        <h2 className="font-serif text-2xl text-[#241F1C] mb-2">Product Not Found</h2>
-        <p className="text-xs text-neutral-500 max-w-sm mb-6">
-          The item you are looking for is not available or has been removed.
-        </p>
-        <Link
-          to="/"
-          className="px-6 py-2.5 bg-[#1E1A17] text-white rounded-lg text-xs uppercase tracking-wider font-medium"
-        >
-          Return to Catalog
-        </Link>
+      <div className="min-h-screen bg-[#FAF5EF] flex flex-col justify-between">
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          <h2 className="font-serif text-2xl text-[#241F1C] mb-2">Product Not Found</h2>
+          <p className="text-xs text-neutral-500 max-w-sm mb-6">
+            The item you are looking for is not available or has been removed.
+          </p>
+          <Link
+            to="/"
+            className="px-6 py-2.5 bg-[#5C061C] text-white rounded-full text-xs uppercase tracking-wider font-medium"
+          >
+            Return to Catalog
+          </Link>
+        </div>
+        <Footer />
       </div>
     );
   }
 
   const isSoldOut = product.stock !== undefined && product.stock <= 0;
+  const wishlisted = isWishlisted ? isWishlisted(product.id) : false;
+  const hasDiscount = product.originalPrice && product.originalPrice > product.price;
+  const discountPercent = hasDiscount 
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) 
+    : 22;
 
   // Other products for "You May Also Like"
   const otherProducts = products
@@ -118,96 +148,128 @@ export const ProductPage = () => {
 
   const handleAddToCart = () => {
     if (isSoldOut) return;
-    addToCart(product, quantity);
+    addToCart({ ...product, selectedSize }, quantity);
     setIsCartOpen(true);
   };
 
   const handleCheckout = () => {
     if (isSoldOut) return;
-    addToCart(product, quantity);
+    addToCart({ ...product, selectedSize }, quantity);
     navigate('/checkout');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleShare = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(window.location.href);
+      setCopiedLink(true);
+      if (showToast) showToast('Product link copied to clipboard!');
+      setTimeout(() => setCopiedLink(false), 2000);
+    }
+  };
+
+  const handleWhatsAppInquiry = () => {
+    const text = encodeURIComponent(
+      `Hello House of Taaga, I am interested in: ${product.title} (₹${product.price.toLocaleString('en-IN')}, Size: ${selectedSize}). Could you share more details? Link: ${window.location.href}`
+    );
+    window.open(`https://wa.me/${cleanPhone}?text=${text}`, '_blank');
+  };
+
   return (
-    <div className="bg-[#FAF7F2] pb-16 pt-3 animate-fadeIn min-h-[85vh]">
+    <div className="bg-[#FAF5EF] pb-20 pt-4 animate-fadeIn min-h-[90vh]">
       
-      {/* Simple Back Link */}
-      <div className="max-w-4xl mx-auto px-4 mb-4">
-        <Link 
-          to="/" 
-          className="inline-flex items-center gap-1.5 text-xs text-neutral-500 hover:text-[#1E1A17] transition-colors"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to All Products</span>
-        </Link>
-      </div>
+      {/* Breadcrumb Navigation */}
+      <nav aria-label="Breadcrumb" className="max-w-6xl mx-auto px-4 sm:px-6 mb-4">
+        <ol className="flex items-center gap-1.5 text-xs text-[#8C6F5A] flex-wrap">
+          <li>
+            <Link to="/" className="hover:text-[#5C061C] transition-colors">Home</Link>
+          </li>
+          <li className="text-[#C4924D]">/</li>
+          <li>
+            <Link to="/" className="hover:text-[#5C061C] transition-colors">Collections</Link>
+          </li>
+          <li className="text-[#C4924D]">/</li>
+          <li className="text-[#5C061C] font-medium truncate max-w-[200px] sm:max-w-none">
+            {product.category || 'Kurtas'}
+          </li>
+          <li className="text-[#C4924D]">/</li>
+          <li className="text-[#270803] font-medium truncate max-w-[160px] sm:max-w-none">
+            {product.title}
+          </li>
+        </ol>
+      </nav>
 
       {/* Main Product Container */}
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 bg-white p-6 sm:p-8 rounded-2xl border border-[#EAE0D4] shadow-xs">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 bg-[#FFF9F2] p-5 sm:p-8 lg:p-10 rounded-2xl sm:rounded-3xl border border-[#DEC49E]/70 shadow-xs">
           
-          {/* LEFT: Complete Multi-Image Product Gallery */}
-          <div className="flex flex-col">
-            {/* Main Featured Photo Box */}
-            <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden bg-[#F4ECE3] border border-[#E5DACD] group shadow-xs select-none">
+          {/* =========================================================
+              LEFT COLUMN: PRODUCT GALLERY (md:col-span-6)
+             ========================================================= */}
+          <div className="md:col-span-6 flex flex-col space-y-3">
+            
+            {/* Featured Photo Display */}
+            <div className="relative aspect-[4/4.8] w-full rounded-2xl overflow-hidden bg-[#FAF5EF] border border-[#DEC49E]/80 group shadow-xs select-none">
               {currentImage ? (
                 <img 
                   key={currentImage}
                   src={currentImage} 
                   alt={`${product.title} - View ${activeImageIndex + 1}`} 
                   onClick={() => setIsLightboxOpen(true)}
-                  className="w-full h-full object-cover transition-opacity duration-300 cursor-zoom-in hover:scale-102"
+                  className="w-full h-full object-cover object-top transition-transform duration-500 cursor-zoom-in hover:scale-102"
                 />
               ) : (
                 <FashionPlaceholder 
                   type={product.placeholderKey || 'kurta'}
                   imageUrl={product.imageUrl}
                   alt={product.title}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover object-top"
                 />
               )}
 
-              {/* Photo Count Indicator (when multiple photos available) */}
-              {hasMultipleImages && (
-                <div className="absolute top-3.5 left-3.5 z-10">
-                  <span className="px-2.5 py-1 bg-black/60 backdrop-blur-md text-white text-[11px] font-medium rounded-full shadow-sm flex items-center gap-1.5 tracking-wide">
-                    <Camera className="w-3.5 h-3.5 text-amber-300" />
-                    <span>{activeImageIndex + 1} of {allImages.length}</span>
-                  </span>
-                </div>
-              )}
+              {/* Bestseller Badge */}
+              <span className="absolute top-3 left-3 bg-[#5C061C] text-[#FFF9F2] text-[9.5px] font-sans font-bold tracking-wider uppercase px-3 py-1 rounded-full shadow-md flex items-center gap-1 z-10">
+                <span className="text-[#F3D7AB] text-xs leading-none">✦</span>
+                <span>{product.tag || 'BESTSELLER'}</span>
+              </span>
 
-              {/* Sold Out Badge */}
-              {isSoldOut && (
-                <div className="absolute top-3.5 right-3.5 z-10">
-                  <span className="px-3 py-1 bg-rose-600 text-white rounded-full text-xs font-semibold uppercase tracking-wider shadow-sm">
-                    Sold Out
-                  </span>
-                </div>
-              )}
+              {/* Circular Wishlist Button */}
+              <button
+                type="button"
+                onClick={() => toggleWishlist && toggleWishlist(product.id)}
+                className="absolute top-3 right-3 w-9 h-9 rounded-full bg-[#FFF9F2]/95 hover:bg-white backdrop-blur-xs flex items-center justify-center transition-all duration-200 active:scale-90 hover:scale-105 shadow-md border border-[#DEC49E]/60 cursor-pointer z-10"
+                aria-label={wishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
+              >
+                <Heart 
+                  className={`w-4 h-4 transition-colors ${
+                    wishlisted 
+                      ? 'fill-[#5C061C] text-[#5C061C]' 
+                      : 'text-[#5C061C] stroke-[2]'
+                  }`} 
+                />
+              </button>
 
-              {/* Expand / Lightbox Button */}
+              {/* Lightbox / Fullscreen Icon */}
               {currentImage && (
                 <button
                   type="button"
                   onClick={() => setIsLightboxOpen(true)}
                   aria-label="View fullscreen photo"
-                  title="Click to zoom / expand photo"
-                  className="absolute bottom-3.5 right-3.5 z-10 p-2 rounded-full bg-black/55 hover:bg-black/80 text-white backdrop-blur-md transition-all shadow-sm hover:scale-105 cursor-pointer"
+                  title="Click to view full photo"
+                  className="absolute bottom-3 right-3 z-10 p-2 rounded-full bg-[#270803]/70 hover:bg-[#270803]/90 text-white backdrop-blur-xs transition-all shadow-md hover:scale-105 cursor-pointer"
                 >
                   <Maximize2 className="w-4 h-4" />
                 </button>
               )}
 
-              {/* Prev / Next Chevrons on Main Photo (when multiple photos) */}
+              {/* Prev / Next Image Navigation (if multiple) */}
               {hasMultipleImages && (
                 <>
                   <button
                     type="button"
                     onClick={handlePrevImage}
                     aria-label="Previous photo"
-                    className="absolute left-2.5 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/90 hover:bg-white text-neutral-800 backdrop-blur-md shadow-md flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/90 hover:bg-white text-[#5C061C] backdrop-blur-xs shadow-md flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
                   >
                     <ChevronLeft className="w-5 h-5 -ml-0.5" />
                   </button>
@@ -215,7 +277,7 @@ export const ProductPage = () => {
                     type="button"
                     onClick={handleNextImage}
                     aria-label="Next photo"
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/90 hover:bg-white text-neutral-800 backdrop-blur-md shadow-md flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/90 hover:bg-white text-[#5C061C] backdrop-blur-xs shadow-md flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
                   >
                     <ChevronRight className="w-5 h-5 -mr-0.5" />
                   </button>
@@ -223,193 +285,307 @@ export const ProductPage = () => {
               )}
             </div>
 
-            {/* Thumbnail Strip: Shows every uploaded image */}
+            {/* Thumbnail Strip (Proper fixed dimensions, no blowing up) */}
             {hasMultipleImages && (
-              <div className="mt-3.5 space-y-1.5">
-                <div className="flex items-center justify-between text-[11px] text-neutral-500 font-medium px-1">
-                  <span>Available Photos ({allImages.length})</span>
-                  <span className="text-[10px] text-neutral-400">Tap to view angle</span>
+              <div className="pt-1">
+                <div className="flex items-center justify-between text-[11px] text-[#8C6F5A] font-medium px-0.5 mb-1.5">
+                  <span className="flex items-center gap-1">
+                    <Camera className="w-3.5 h-3.5 text-[#C4924D]" />
+                    <span>Available Photos ({allImages.length})</span>
+                  </span>
+                  <span className="text-[10px] text-[#8C6F5A]/70">Tap thumbnail to view</span>
                 </div>
+
                 <div className="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-none">
                   {allImages.map((img, idx) => (
                     <button
                       key={idx}
                       type="button"
                       onClick={() => setActiveImageIndex(idx)}
-                      className={`relative w-18 h-22 sm:w-20 sm:h-24 rounded-xl overflow-hidden border-2 transition-all cursor-pointer flex-shrink-0 bg-[#F4ECE3] ${
+                      className={`relative w-16 h-20 sm:w-20 sm:h-24 shrink-0 rounded-xl overflow-hidden border-2 transition-all cursor-pointer bg-[#FAF5EF] ${
                         activeImageIndex === idx
-                          ? 'border-[#7A112A] ring-2 ring-[#7A112A]/30 shadow-md scale-102 opacity-100'
-                          : 'border-[#E3D7C9] opacity-60 hover:opacity-100 hover:border-neutral-400'
+                          ? 'border-[#5C061C] ring-2 ring-[#5C061C]/25 shadow-md scale-102 opacity-100'
+                          : 'border-[#DEC49E]/50 opacity-70 hover:opacity-100 hover:border-[#5C061C]'
                       }`}
                       title={`View photo ${idx + 1}`}
                     >
                       <img
                         src={img}
-                        alt={`${product.title} view ${idx + 1}`}
-                        className="w-full h-full object-cover"
+                        alt={`${product.title} angle ${idx + 1}`}
+                        className="w-full h-full object-cover object-top"
                       />
-                      <span className="absolute bottom-1 left-1 px-1.5 py-0.2 bg-black/60 backdrop-blur-xs text-white text-[9px] font-medium rounded-full">
+                      <span className="absolute bottom-1 left-1 px-1.5 py-0.2 bg-[#270803]/70 text-white text-[9px] font-medium rounded-full">
                         {idx + 1}
                       </span>
-                      {activeImageIndex === idx && (
-                        <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#7A112A] ring-2 ring-white" />
-                      )}
                     </button>
                   ))}
                 </div>
               </div>
             )}
+
           </div>
 
-          {/* RIGHT: Super Simple Product Details */}
-          <div className="flex flex-col justify-between space-y-6">
+          {/* =========================================================
+              RIGHT COLUMN: PRODUCT DETAILS & SPECIFICATIONS
+             ========================================================= */}
+          <div className="md:col-span-6 flex flex-col justify-between space-y-6">
+            
             <div className="space-y-4">
-              {/* Title & Subtitle */}
+              
+              {/* Category, Title & Subtitle */}
               <div>
-                <h1 className="font-serif text-2xl sm:text-3xl text-[#1E1A17] font-medium leading-tight">
+                <span className="text-[11px] font-sans font-bold uppercase tracking-[0.22em] text-[#C4924D] block mb-1">
+                  {product.category || 'Handcrafted Kurtas'}
+                </span>
+                <h1 className="font-serif text-2xl sm:text-3xl lg:text-[32px] text-[#270803] font-medium leading-tight">
                   {product.title}
                 </h1>
                 {product.subtitle && (
-                  <p className="text-xs sm:text-sm text-neutral-500 font-serif italic mt-1">
+                  <p className="text-xs sm:text-sm text-[#8C6F5A] font-serif italic mt-1">
                     {product.subtitle}
                   </p>
                 )}
               </div>
 
-              {/* Price & Stock Status */}
-              <div className="flex items-baseline gap-3 pb-3 border-b border-[#F0E6DC]">
-                <span className="font-serif text-2xl sm:text-3xl font-bold text-[#1E1A17]">
-                  ₹{(product.price || 0).toLocaleString('en-IN')}
-                </span>
-                {product.originalPrice > product.price && (
-                  <span className="text-sm text-neutral-400 line-through">
-                    ₹{product.originalPrice.toLocaleString('en-IN')}
+              {/* Pricing Row with Clean Sans Lining Numerals */}
+              <div className="pb-3 border-b border-[#EAD7C5]">
+                <div className="flex items-baseline gap-2.5 sm:gap-3 flex-wrap">
+                  <span className="font-sans font-bold text-2xl sm:text-3xl text-[#5C061C] tracking-tight tabular-nums">
+                    ₹{(product.price || 0).toLocaleString('en-IN')}
                   </span>
-                )}
-                <span className={`text-xs px-2 py-0.5 rounded-md font-medium ${
-                  isSoldOut
-                    ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                    : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                }`}>
-                  {isSoldOut ? 'Out of Stock' : 'In Stock'}
-                </span>
+                  {(product.originalPrice || hasDiscount) && (
+                    <span className="font-sans text-sm sm:text-base text-neutral-400 line-through font-normal tabular-nums">
+                      ₹{(product.originalPrice || Math.round(product.price * 1.25)).toLocaleString('en-IN')}
+                    </span>
+                  )}
+                  <span className="text-xs font-sans font-bold text-[#8C2436] bg-[#FCE7E6] px-2.5 py-0.5 rounded-full tabular-nums">
+                    {discountPercent}% OFF
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#8C6F5A] mt-1 font-sans">
+                  Inclusive of all taxes • Handcrafted in Pune, Maharashtra
+                </p>
               </div>
 
               {/* Description */}
               <div className="space-y-1">
-                <span className="text-xs font-semibold text-neutral-700 uppercase tracking-wider block">
+                <span className="text-xs font-semibold text-[#270803] uppercase tracking-wider block">
                   Description
                 </span>
-                <p className="text-sm text-neutral-600 leading-relaxed">
-                  {product.description || 'Artisan handcrafted ensemble tailored with premium textiles.'}
+                <p className="text-sm text-[#5C3D2E] leading-relaxed">
+                  {product.description || 'Artisan handcrafted ensemble tailored with pure breathable textiles, intricate detailing, and timeless heritage charm.'}
                 </p>
               </div>
 
-              {/* Quantity Selector */}
-              <div className="pt-2">
-                <div className="space-y-1.5">
-                  <span className="text-xs font-semibold text-neutral-700 uppercase tracking-wider block">
-                    Quantity
+              {/* Size Selector */}
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-[#270803] uppercase tracking-wider">
+                    Select Size
                   </span>
-                  <div className="inline-flex items-center bg-[#FAF5EE] border border-[#DECBB8] rounded-full p-1">
+                  <span className="text-[11px] text-[#8C6F5A] italic">
+                    Regular Comfort Fit
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {sizes.map((s) => (
                     <button
+                      key={s}
                       type="button"
-                      disabled={quantity <= 1}
-                      onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-700 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                      title="Decrease quantity"
+                      onClick={() => setSelectedSize(s)}
+                      className={`w-11 h-10 rounded-xl text-xs font-sans font-semibold transition-all cursor-pointer ${
+                        selectedSize === s
+                          ? 'bg-[#5C061C] text-[#FFF9F2] shadow-sm ring-2 ring-[#5C061C]/30'
+                          : 'bg-[#FAF5EF] text-[#270803] border border-[#DEC49E]/70 hover:border-[#5C061C]'
+                      }`}
                     >
-                      <Minus className="w-3.5 h-3.5" />
+                      {s}
                     </button>
-                    <span className="w-9 text-center text-xs font-semibold text-[#25201C] select-none">
-                      {quantity}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setQuantity(q => q + 1)}
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-700 hover:bg-white cursor-pointer transition-colors"
-                      title="Increase quantity"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                  ))}
                 </div>
               </div>
-            </div>
 
-            {/* Action Buttons: Add to Bag & Checkout */}
-            <div className="space-y-2.5 pt-4 border-t border-[#F0E6DC]">
-              <div className="grid grid-cols-2 gap-3">
-                {/* Add to Bag */}
+              {/* Quantity Selector */}
+              <div className="pt-1">
+                <span className="text-xs font-semibold text-[#270803] uppercase tracking-wider block mb-1.5">
+                  Quantity
+                </span>
+                <div className="inline-flex items-center bg-[#FAF5EF] border border-[#DEC49E]/80 rounded-full p-1">
+                  <button
+                    type="button"
+                    disabled={quantity <= 1}
+                    onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-[#270803] hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                    title="Decrease quantity"
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="w-9 text-center text-xs font-semibold text-[#270803] select-none tabular-nums">
+                    {quantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(q => q + 1)}
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-[#270803] hover:bg-white cursor-pointer transition-colors"
+                    title="Increase quantity"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Action Buttons: Add to Bag & Instant Checkout */}
+              <div className="space-y-2.5 pt-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  
+                  {/* Add to Bag */}
+                  <button
+                    type="button"
+                    disabled={isSoldOut}
+                    onClick={handleAddToCart}
+                    className="py-3.5 px-4 bg-white hover:bg-[#FAF5EF] text-[#5C061C] border border-[#5C061C] rounded-full text-xs uppercase tracking-wider font-bold flex items-center justify-center gap-2 transition-all active:scale-95 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    <ShoppingBag className="w-4 h-4 text-[#5C061C]" />
+                    <span>{isSoldOut ? 'Sold Out' : 'Add to Bag'}</span>
+                  </button>
+
+                  {/* Checkout */}
+                  <button
+                    type="button"
+                    disabled={isSoldOut}
+                    onClick={handleCheckout}
+                    className="py-3.5 px-4 bg-[#5C061C] hover:bg-[#450313] text-[#FFF9F2] rounded-full text-xs uppercase tracking-widest font-bold flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md shadow-[#5C061C]/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    <span>{isSoldOut ? 'Unavailable' : 'Buy Now'}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* WhatsApp Concierge Assistance */}
                 <button
                   type="button"
-                  disabled={isSoldOut}
-                  onClick={handleAddToCart}
-                  className="py-3.5 px-4 bg-white hover:bg-[#F6EFE8] text-[#1E1A17] border border-[#DECBB8] rounded-full text-xs uppercase tracking-wider font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  onClick={handleWhatsAppInquiry}
+                  className="w-full py-2.5 px-4 bg-[#FAF5EF] hover:bg-[#F3EBE1] text-[#270803] border border-[#DEC49E]/70 rounded-full text-xs font-sans font-medium flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
-                  <ShoppingBag className="w-4 h-4 text-[#7A112A]" />
-                  <span>{isSoldOut ? 'Sold Out' : 'Add to Bag'}</span>
-                </button>
-
-                {/* Checkout */}
-                <button
-                  type="button"
-                  disabled={isSoldOut}
-                  onClick={handleCheckout}
-                  className="py-3.5 px-4 bg-[#7A112A] hover:bg-[#640B20] text-white rounded-full text-xs uppercase tracking-widest font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md shadow-[#7A112A]/25 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  <span>{isSoldOut ? 'Unavailable' : 'Checkout'}</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <Phone className="w-3.5 h-3.5 text-[#5C061C]" />
+                  <span>Have questions on sizing or styling? Chat on WhatsApp</span>
                 </button>
               </div>
+
+              {/* Heritage Trust Marks */}
+              <div className="pt-4 border-t border-[#EAD7C5] grid grid-cols-2 gap-3 text-xs text-[#5C3D2E]">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-[#C4924D] shrink-0" />
+                  <span>100% Handcrafted Artisanal Quality</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Truck className="w-4 h-4 text-[#C4924D] shrink-0" />
+                  <span>Pan-India Studio Express Dispatch</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-[#C4924D] shrink-0" />
+                  <span>Direct from Pune Mother-Daughter Label</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={handleShare}
+                    className="flex items-center gap-1.5 text-[#5C061C] hover:underline"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    <span>{copiedLink ? 'Copied Link!' : 'Share Product'}</span>
+                  </button>
+                </div>
+              </div>
+
             </div>
 
           </div>
 
         </div>
 
-        {/* YOU MAY ALSO LIKE */}
+        {/* =========================================================
+            YOU MAY ALSO LIKE: Royal Heritage Product Grid
+           ========================================================= */}
         {otherProducts.length > 0 && (
-          <div className="mt-12 pt-8 border-t border-[#EAE0D4]">
-            <div className="mb-6">
-              <h3 className="font-serif text-xl sm:text-2xl text-[#1E1A17] font-medium">
+          <div className="mt-14 pt-8 border-t border-[#DEC49E]/60">
+            <div className="mb-6 text-center">
+              <span className="text-[10px] font-sans font-bold uppercase tracking-[0.25em] text-[#C4924D] block mb-1">
+                CURATED COMPANIONS
+              </span>
+              <h3 className="font-serif text-2xl sm:text-3xl text-[#270803] font-medium">
                 You May Also Like
               </h3>
-              <p className="text-xs text-neutral-500 font-light mt-0.5">
-                Explore more handcrafted pieces from our collection
+              <p className="text-xs text-[#8C6F5A] font-serif italic mt-0.5">
+                Explore more handcrafted timeless pieces from our collection
               </p>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {otherProducts.map(item => (
-                <Link
-                  key={item.id}
-                  to={`/product/${item.id}`}
-                  className="group bg-white rounded-xl overflow-hidden border border-[#EDE4D9] shadow-xs hover:shadow-card transition-all flex flex-col justify-between"
-                >
-                  <div className="relative aspect-[3/4] w-full bg-[#F3ECE4] overflow-hidden">
-                    <FashionPlaceholder 
-                      type={item.placeholderKey || 'kurta'}
-                      imageUrl={(item.images && item.images[0]) || item.imageUrl}
-                      alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  </div>
-                  <div className="p-3">
-                    <h4 className="font-serif text-xs sm:text-sm font-medium text-[#221E1B] line-clamp-1 group-hover:text-brand-700 transition-colors">
-                      {item.title}
-                    </h4>
-                    <span className="font-serif font-semibold text-xs sm:text-sm text-[#1E1A17] block mt-1">
-                      ₹{(item.price || 0).toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                </Link>
-              ))}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 sm:gap-6">
+              {otherProducts.map((item) => {
+                const itemHasDiscount = item.originalPrice && item.originalPrice > item.price;
+                const itemDiscount = itemHasDiscount 
+                  ? Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100) 
+                  : 22;
+
+                return (
+                  <article
+                    key={item.id}
+                    onClick={() => {
+                      navigate(`/product/${item.id}`);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="group flex flex-col bg-[#FAF5EF] rounded-2xl overflow-hidden border border-[#DEC49E]/80 shadow-xs hover:shadow-xl transition-all duration-500 cursor-pointer select-none relative"
+                  >
+                    <div className="relative aspect-[4/4.3] w-full overflow-hidden bg-[#FAF5EF]">
+                      <img
+                        src={item.imageUrl || (item.images && item.images[0]) || '/category-kurtas.jpg'}
+                        alt={item.title}
+                        className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                      />
+                      <span className="absolute top-2 left-2 bg-[#5C061C] text-[#FFF9F2] text-[8.5px] font-sans font-bold tracking-wider uppercase px-2 py-0.5 rounded-full shadow-md">
+                        ✦ {item.tag || 'BESTSELLER'}
+                      </span>
+                    </div>
+
+                    <div className="-mt-3.5 relative z-10 flex flex-col flex-1">
+                      <div className="relative w-full overflow-hidden -mb-[1px]">
+                        <svg viewBox="0 0 400 32" className="w-full h-3.5 block text-[#FFF9F2]" preserveAspectRatio="none">
+                          <path d="M0 32 C60 32 120 14 175 14 C188 14 194 6 200 6 C206 6 212 14 225 14 C280 14 340 32 400 32 V32 H0 Z" fill="currentColor" />
+                          <path d="M0 32 C60 32 120 14 175 14 C188 14 194 6 200 6 C206 6 212 14 225 14 C280 14 340 32 400 32" fill="none" stroke="#DEC49E" strokeWidth="1.2" />
+                        </svg>
+                      </div>
+
+                      <div className="bg-[#FFF9F2] px-3 pt-0.5 pb-2.5 flex flex-col flex-1 justify-between">
+                        <div>
+                          <span className="text-[8.5px] font-sans font-bold tracking-[0.18em] text-[#C4924D] uppercase block">
+                            {item.category || 'KURTAS'}
+                          </span>
+                          <h4 className="font-serif text-[13px] font-medium text-[#270803] group-hover:text-[#5C061C] transition-colors truncate mt-0.5 leading-tight">
+                            {item.title}
+                          </h4>
+                        </div>
+
+                        <div className="mt-1 flex items-baseline gap-1.5">
+                          <span className="font-sans font-bold text-[15px] text-[#5C061C] tabular-nums">
+                            ₹{(item.price || 0).toLocaleString('en-IN')}
+                          </span>
+                          <span className="text-[8.5px] font-sans font-bold text-[#8C2436] bg-[#FCE7E6] px-1.5 py-0.2 rounded-full tabular-nums">
+                            {itemDiscount}% OFF
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           </div>
         )}
 
       </div>
+
+      {/* Brand Footer */}
+      <Footer />
 
       {/* Fullscreen High-Resolution Lightbox Modal */}
       {isLightboxOpen && currentImage && (
@@ -488,9 +664,9 @@ export const ProductPage = () => {
                   key={idx}
                   type="button"
                   onClick={() => setActiveImageIndex(idx)}
-                  className={`w-14 h-18 sm:w-16 sm:h-20 rounded-xl overflow-hidden border-2 transition-all cursor-pointer flex-shrink-0 bg-neutral-900 ${
+                  className={`w-14 h-16 sm:w-16 sm:h-20 rounded-xl overflow-hidden border-2 transition-all cursor-pointer shrink-0 bg-neutral-900 ${
                     activeImageIndex === idx
-                      ? 'border-[#7A112A] scale-105 ring-2 ring-[#7A112A]/40 opacity-100'
+                      ? 'border-[#5C061C] scale-105 ring-2 ring-[#5C061C]/40 opacity-100'
                       : 'border-white/20 opacity-40 hover:opacity-90'
                   }`}
                   title={`View photo ${idx + 1}`}

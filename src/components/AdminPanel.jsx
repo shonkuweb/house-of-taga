@@ -50,6 +50,7 @@ import {
 import { useStore, ORDER_STAGES } from '../context/StoreContext';
 import { FashionPlaceholder } from './Placeholders';
 import { api } from '../services/api';
+import { INDIAN_STATES } from '../data/indianStates';
 
 // Client-side image compression helper: keeps aspect ratio, max 1200px, quality JPEG
 const compressImage = (file) => {
@@ -94,6 +95,20 @@ const compressImage = (file) => {
     reader.onerror = () => reject(new Error('Failed to read file'));
     reader.readAsDataURL(file);
   });
+};
+
+// Upload any image file directly to Cloudflare R2 bucket first
+const uploadImageToR2 = async (file) => {
+  if (!file) throw new Error('No image file selected');
+  try {
+    const res = await api.uploadImage(file);
+    if (res && res.url) {
+      return res.url;
+    }
+  } catch (err) {
+    console.warn('[R2 Upload] Backend upload failed, falling back to local compression:', err);
+  }
+  return await compressImage(file);
 };
 
 // Helper to recursively flatten category tree for hierarchical display (depth 0, 1, 2)
@@ -195,6 +210,8 @@ export const AdminPanel = ({ onClose }) => {
     primaryImage: '',
     secondImage: '',
     shippingScope: 'all_india', // 'all_india' | 'specific_states' | 'specific_pincodes'
+    allowedStates: [],
+    allowedPincodes: '',
     description: '',
     careTips: '',
     deliveryReturns: '',
@@ -206,6 +223,8 @@ export const AdminPanel = ({ onClose }) => {
     showSampleReviews: true,
     inStock: true
   });
+
+  const [stateSearchFilter, setStateSearchFilter] = useState('');
 
   // Category Form State (Supporting Parent & Subcategory hierarchy)
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
@@ -428,6 +447,7 @@ export const AdminPanel = ({ onClose }) => {
   // Product Handlers (Supporting all areas from reference screenshots)
   const handleOpenAddProduct = () => {
     setEditingProductId(null);
+    setStateSearchFilter('');
     const defaultCatIds = categories.length > 0 ? [categories[0].id || categories[0].slug] : [];
     setProductForm({
       title: '',
@@ -439,6 +459,8 @@ export const AdminPanel = ({ onClose }) => {
       primaryImage: '',
       secondImage: '',
       shippingScope: 'all_india',
+      allowedStates: [],
+      allowedPincodes: '',
       description: '',
       careTips: '',
       deliveryReturns: '',
@@ -455,6 +477,7 @@ export const AdminPanel = ({ onClose }) => {
 
   const handleOpenEditProduct = (prod) => {
     setEditingProductId(prod.id);
+    setStateSearchFilter('');
     const existingImages = Array.isArray(prod.images) && prod.images.length > 0
       ? prod.images
       : (prod.imageUrl ? [prod.imageUrl] : []);
@@ -471,6 +494,10 @@ export const AdminPanel = ({ onClose }) => {
       primaryImage: existingImages[0] || prod.imageUrl || '',
       secondImage: existingImages[1] || '',
       shippingScope: prod.shippingScope || 'all_india',
+      allowedStates: Array.isArray(prod.allowedStates) ? prod.allowedStates : [],
+      allowedPincodes: Array.isArray(prod.allowedPincodes) 
+        ? prod.allowedPincodes.join(', ') 
+        : (prod.allowedPincodes || ''),
       description: prod.description || '',
       careTips: prod.careTips || prod.fabricCare || '',
       deliveryReturns: prod.deliveryReturns || '',
@@ -489,9 +516,10 @@ export const AdminPanel = ({ onClose }) => {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const url = await compressImage(file);
+      showToast('Uploading primary image to R2...');
+      const url = await uploadImageToR2(file);
       setProductForm(prev => ({ ...prev, primaryImage: url }));
-      showToast('Primary image uploaded');
+      showToast('Primary image uploaded to R2!');
     } catch (err) {
       showToast(err.message || 'Image upload failed', 'error');
     }
@@ -501,9 +529,10 @@ export const AdminPanel = ({ onClose }) => {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const url = await compressImage(file);
+      showToast('Uploading second image to R2...');
+      const url = await uploadImageToR2(file);
       setProductForm(prev => ({ ...prev, secondImage: url }));
-      showToast('Second image uploaded');
+      showToast('Second image uploaded to R2!');
     } catch (err) {
       showToast(err.message || 'Image upload failed', 'error');
     }
@@ -528,6 +557,25 @@ export const AdminPanel = ({ onClose }) => {
     // Find primary category name & slug from selected categoryIds
     const selectedCat = categories.find(c => productForm.categoryIds.includes(c.id || c.slug)) || categories[0];
 
+    // Validation for shipping restrictions
+    let parsedPincodes = [];
+    if (productForm.shippingScope === 'specific_pincodes') {
+      parsedPincodes = (productForm.allowedPincodes || '')
+        .split(/[\s,]+/)
+        .map(p => p.trim())
+        .filter(p => /^\d{6}$/.test(p));
+      if (parsedPincodes.length === 0) {
+        showToast('Please enter at least one valid 6-digit pincode', 'error');
+        return;
+      }
+    }
+    if (productForm.shippingScope === 'specific_states') {
+      if (!productForm.allowedStates || productForm.allowedStates.length === 0) {
+        showToast('Please select at least one state for delivery restriction', 'error');
+        return;
+      }
+    }
+
     const payload = {
       title: productForm.title.trim(),
       name: productForm.title.trim(),
@@ -542,6 +590,8 @@ export const AdminPanel = ({ onClose }) => {
       images: images.length > 0 ? images : [finalImageUrl],
       imageUrl: finalImageUrl,
       shippingScope: productForm.shippingScope,
+      allowedStates: productForm.shippingScope === 'specific_states' ? productForm.allowedStates : [],
+      allowedPincodes: productForm.shippingScope === 'specific_pincodes' ? parsedPincodes : [],
       careTips: productForm.careTips.trim(),
       deliveryReturns: productForm.deliveryReturns.trim(),
       highlights: {
@@ -608,9 +658,10 @@ export const AdminPanel = ({ onClose }) => {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const url = await compressImage(file);
+      showToast('Uploading category thumbnail to R2...');
+      const url = await uploadImageToR2(file);
       setCategoryForm(prev => ({ ...prev, imageUrl: url }));
-      showToast('Thumbnail uploaded successfully');
+      showToast('Thumbnail uploaded to Cloudflare R2!');
     } catch (err) {
       showToast(err.message || 'Image upload failed', 'error');
     }
@@ -627,7 +678,7 @@ export const AdminPanel = ({ onClose }) => {
       parentId: categoryForm.parentId || null,
       isParent,
       subtitle: categoryForm.subtitle.trim(),
-      imageUrl: categoryForm.imageUrl.trim() || '/category-kurtas.jpg'
+      imageUrl: categoryForm.imageUrl ? categoryForm.imageUrl.trim() : ''
     };
 
     if (editingCategoryId) {
@@ -675,25 +726,27 @@ export const AdminPanel = ({ onClose }) => {
   const handleMobileBannerUpload = async (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
+    showToast('Uploading mobile banner(s) to R2...');
     for (const f of files.slice(0, 5 - heroSettings.mobileBanners.length)) {
       try {
-        const url = await compressImage(f);
+        const url = await uploadImageToR2(f);
         setHeroSettings(prev => ({ ...prev, mobileBanners: [...prev.mobileBanners, url] }));
       } catch (err) {}
     }
-    showToast('Mobile banner(s) uploaded');
+    showToast('Mobile banner(s) uploaded to Cloudflare R2!');
   };
 
   const handleDesktopBannerUpload = async (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
+    showToast('Uploading desktop banner(s) to R2...');
     for (const f of files.slice(0, 5 - heroSettings.desktopBanners.length)) {
       try {
-        const url = await compressImage(f);
+        const url = await uploadImageToR2(f);
         setHeroSettings(prev => ({ ...prev, desktopBanners: [...prev.desktopBanners, url] }));
       } catch (err) {}
     }
-    showToast('Desktop banner(s) uploaded');
+    showToast('Desktop banner(s) uploaded to Cloudflare R2!');
   };
 
   // Affiliate Handlers
@@ -1459,12 +1512,19 @@ export const AdminPanel = ({ onClose }) => {
                       >
                         <div>
                           {/* Thumbnail */}
-                          <div className="aspect-[4/3] rounded-xl overflow-hidden bg-[#FAF2E9] border border-[#E8D9C8] mb-3 relative">
-                            <img 
-                              src={cat.imageUrl || cat.image || '/category-kurtas.jpg'} 
-                              alt={cat.name}
-                              className="w-full h-full object-cover" 
-                            />
+                          <div className="aspect-[4/3] rounded-xl overflow-hidden bg-[#FAF2E9] border border-[#E8D9C8] mb-3 relative flex items-center justify-center">
+                            {(cat.imageUrl || cat.image) ? (
+                              <img 
+                                src={cat.imageUrl || cat.image} 
+                                alt={cat.name}
+                                className="w-full h-full object-cover" 
+                              />
+                            ) : (
+                              <div className="w-full h-full flex flex-col items-center justify-center bg-[#FAF4ED] text-neutral-400 p-3 text-center">
+                                <ImageIcon className="w-7 h-7 text-[#B65A37]/40 mb-1" />
+                                <span className="text-[11px] font-medium text-neutral-500">No image uploaded</span>
+                              </div>
+                            )}
                             {/* Hierarchy Badge on Thumbnail */}
                             <div className="absolute top-2 left-2">
                               {isParent ? (
@@ -2336,13 +2396,14 @@ export const AdminPanel = ({ onClose }) => {
                       e.preventDefault();
                       e.stopPropagation();
                       const files = Array.from(e.dataTransfer?.files || []).filter(f => f.type.startsWith('image/'));
+                      showToast('Uploading mobile banner(s) to R2...');
                       for (const f of files.slice(0, 5)) {
                         try {
-                          const url = await compressImage(f);
+                          const url = await uploadImageToR2(f);
                           setHeroSettings(prev => ({ ...prev, mobileBanners: [...prev.mobileBanners, url] }));
                         } catch (err) {}
                       }
-                      showToast('Mobile banner(s) dropped & uploaded');
+                      showToast('Mobile banner(s) uploaded to Cloudflare R2!');
                     }}
                     className="p-6 rounded-2xl border-2 border-dashed border-[#E8D9C8] hover:border-[#B65A37] hover:bg-[#FAF2E9]/40 text-center cursor-pointer transition-colors"
                   >
@@ -2413,13 +2474,14 @@ export const AdminPanel = ({ onClose }) => {
                       e.preventDefault();
                       e.stopPropagation();
                       const files = Array.from(e.dataTransfer?.files || []).filter(f => f.type.startsWith('image/'));
+                      showToast('Uploading desktop banner(s) to R2...');
                       for (const f of files.slice(0, 5)) {
                         try {
-                          const url = await compressImage(f);
+                          const url = await uploadImageToR2(f);
                           setHeroSettings(prev => ({ ...prev, desktopBanners: [...prev.desktopBanners, url] }));
                         } catch (err) {}
                       }
-                      showToast('Desktop banner(s) dropped & uploaded');
+                      showToast('Desktop banner(s) uploaded to Cloudflare R2!');
                     }}
                     className="p-6 rounded-2xl border-2 border-dashed border-[#E8D9C8] hover:border-[#B65A37] hover:bg-[#FAF2E9]/40 text-center cursor-pointer transition-colors"
                   >
@@ -2846,10 +2908,13 @@ export const AdminPanel = ({ onClose }) => {
                           const file = e.dataTransfer?.files?.[0];
                           if (file) {
                             try {
-                              const url = await compressImage(file);
+                              showToast('Uploading primary image to R2...');
+                              const url = await uploadImageToR2(file);
                               setProductForm(prev => ({ ...prev, primaryImage: url }));
-                              showToast('Primary image dropped & set');
-                            } catch (err) {}
+                              showToast('Primary image uploaded to R2!');
+                            } catch (err) {
+                              showToast(err.message || 'Upload failed', 'error');
+                            }
                           }
                         }}
                         className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-2 border-dashed border-[#E8D9C8] bg-[#FAF2E9]/40 flex items-center justify-center shrink-0 overflow-hidden relative group"
@@ -2907,10 +2972,13 @@ export const AdminPanel = ({ onClose }) => {
                           const file = e.dataTransfer?.files?.[0];
                           if (file) {
                             try {
-                              const url = await compressImage(file);
+                              showToast('Uploading second image to R2...');
+                              const url = await uploadImageToR2(file);
                               setProductForm(prev => ({ ...prev, secondImage: url }));
-                              showToast('Second image dropped & set');
-                            } catch (err) {}
+                              showToast('Second image uploaded to R2!');
+                            } catch (err) {
+                              showToast(err.message || 'Upload failed', 'error');
+                            }
                           }
                         }}
                         className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-2 border-dashed border-[#E8D9C8] bg-[#FAF2E9]/40 flex items-center justify-center shrink-0 overflow-hidden relative group"
@@ -3041,6 +3109,141 @@ export const AdminPanel = ({ onClose }) => {
                     </div>
 
                   </div>
+
+                  {/* Specific States Configuration Box */}
+                  {productForm.shippingScope === 'specific_states' && (
+                    <div className="p-4 rounded-2xl bg-[#FAF4ED] border border-[#DEC49E] space-y-3 animate-in fade-in duration-200">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <span className="font-bold text-xs text-[#270803] block">
+                            Select Serviceable States / UTs ({productForm.allowedStates.length} selected)
+                          </span>
+                          <span className="text-[11px] text-[#8C6F5A]">
+                            Only customers residing in these states will be allowed to purchase this item.
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 self-start sm:self-auto flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => setProductForm(prev => ({ ...prev, allowedStates: [...INDIAN_STATES] }))}
+                            className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-white border border-[#DEC49E] text-[#5C061C] hover:bg-[#FAF3EA] cursor-pointer"
+                          >
+                            Select All
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setProductForm(prev => ({ ...prev, allowedStates: [] }))}
+                            className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-white border border-[#DEC49E] text-neutral-600 hover:bg-neutral-50 cursor-pointer"
+                          >
+                            Clear All
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setProductForm(prev => ({ 
+                              ...prev, 
+                              allowedStates: ['Maharashtra', 'Gujarat', 'Goa', 'Karnataka'] 
+                            }))}
+                            className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-white border border-[#DEC49E] text-[#C4924D] hover:bg-[#FAF3EA] cursor-pointer"
+                          >
+                            West &amp; South Hubs
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* State Search Filter */}
+                      <div className="relative">
+                        <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          placeholder="Search state or territory (e.g. Maharashtra, West Bengal)..."
+                          value={stateSearchFilter}
+                          onChange={(e) => setStateSearchFilter(e.target.value)}
+                          className="w-full pl-8 pr-3 py-1.5 bg-white border border-[#DEC49E] rounded-xl text-xs text-[#270803] placeholder:text-neutral-400 focus:outline-none focus:ring-1 focus:ring-[#5C061C]"
+                        />
+                      </div>
+
+                      {/* States Grid / Badges */}
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 max-h-48 overflow-y-auto p-1 bg-white rounded-xl border border-[#DEC49E]/70">
+                        {INDIAN_STATES
+                          .filter(s => s.toLowerCase().includes(stateSearchFilter.toLowerCase()))
+                          .map((stateName) => {
+                            const isChecked = productForm.allowedStates.includes(stateName);
+                            return (
+                              <button
+                                key={stateName}
+                                type="button"
+                                onClick={() => {
+                                  setProductForm(prev => {
+                                    const next = isChecked
+                                      ? prev.allowedStates.filter(s => s !== stateName)
+                                      : [...prev.allowedStates, stateName];
+                                    return { ...prev, allowedStates: next };
+                                  });
+                                }}
+                                className={`px-2.5 py-1.5 rounded-lg text-left text-xs transition-all flex items-center justify-between border cursor-pointer ${
+                                  isChecked
+                                    ? 'bg-[#5C061C] text-white border-[#5C061C] font-semibold shadow-2xs'
+                                    : 'bg-[#FAF5EF] text-[#270803] border-transparent hover:border-[#DEC49E]'
+                                }`}
+                              >
+                                <span className="truncate pr-1 text-[11px]">{stateName}</span>
+                                {isChecked && <Check className="w-3 h-3 shrink-0" />}
+                              </button>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Specific Pincodes Configuration Box */}
+                  {productForm.shippingScope === 'specific_pincodes' && (
+                    <div className="p-4 rounded-2xl bg-[#FAF4ED] border border-[#DEC49E] space-y-3 animate-in fade-in duration-200">
+                      <div>
+                        <span className="font-bold text-xs text-[#270803] block">
+                          Enter Serviceable 6-digit Pincodes
+                        </span>
+                        <span className="text-[11px] text-[#8C6F5A]">
+                          Only customers with an exact matching delivery pincode will be able to place an order.
+                        </span>
+                      </div>
+
+                      <textarea
+                        rows={3}
+                        placeholder="Enter 6-digit pincodes separated by commas or spaces. Example: 411001, 411038, 411014, 700001, 110001"
+                        value={productForm.allowedPincodes}
+                        onChange={(e) => setProductForm(prev => ({ ...prev, allowedPincodes: e.target.value }))}
+                        className="w-full px-3 py-2 bg-white border border-[#DEC49E] rounded-xl text-xs sm:text-sm font-mono text-[#270803] placeholder:text-neutral-400 focus:outline-none focus:ring-1 focus:ring-[#5C061C]"
+                      />
+
+                      {/* Live Parsed Pincodes Preview */}
+                      {(() => {
+                        const parsed = (productForm.allowedPincodes || '')
+                          .split(/[\s,]+/)
+                          .map(p => p.trim())
+                          .filter(p => /^\d{6}$/.test(p));
+                        return (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[11px] font-bold text-[#5C061C]">
+                              {parsed.length} Valid Pincode{parsed.length === 1 ? '' : 's'} Configured:
+                            </span>
+                            {parsed.slice(0, 10).map((pin) => (
+                              <span 
+                                key={pin} 
+                                className="px-2 py-0.5 rounded-full bg-white border border-[#DEC49E] text-[10px] font-mono font-bold text-[#270803]"
+                              >
+                                {pin}
+                              </span>
+                            ))}
+                            {parsed.length > 10 && (
+                              <span className="text-[10px] font-bold text-[#C4924D]">
+                                +{parsed.length - 10} more
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
 
                 {/* 6. Description (optional) */}
@@ -3310,10 +3513,13 @@ export const AdminPanel = ({ onClose }) => {
                         const file = e.dataTransfer?.files?.[0];
                         if (file) {
                           try {
-                            const url = await compressImage(file);
+                            showToast('Uploading category thumbnail to R2...');
+                            const url = await uploadImageToR2(file);
                             setCategoryForm(prev => ({ ...prev, imageUrl: url }));
-                            showToast('Category thumbnail dropped & set');
-                          } catch (err) {}
+                            showToast('Category thumbnail uploaded to R2!');
+                          } catch (err) {
+                            showToast(err.message || 'Upload failed', 'error');
+                          }
                         }
                       }}
                       className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-2 border-dashed border-[#E8D9C8] bg-[#FAF2E9]/40 flex items-center justify-center shrink-0 overflow-hidden relative group"

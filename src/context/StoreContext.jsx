@@ -148,6 +148,93 @@ export const StoreProvider = ({ children }) => {
 
   const isWishlisted = (productId) => wishlist.includes(productId);
   
+  // Customer Account & Authentication state
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('taaga_current_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [customerAccounts, setCustomerAccounts] = useState(() => {
+    try {
+      const saved = localStorage.getItem('taaga_customer_accounts');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const signUpCustomer = ({ fullName, mobile, password, pincode, state }) => {
+    const cleanMobile = (mobile || '').replace(/[^0-9]/g, '');
+    if (cleanMobile.length !== 10) {
+      throw new Error('Please enter a valid 10-digit mobile number');
+    }
+    if (customerAccounts.some(acc => acc.mobile === cleanMobile)) {
+      throw new Error('An account with this mobile number already exists. Please log in.');
+    }
+    const newCustomer = {
+      id: `cust_${Date.now()}`,
+      fullName: (fullName || '').trim(),
+      mobile: cleanMobile,
+      password: password,
+      pincode: (pincode || '').trim(),
+      state: (state || 'Maharashtra').trim(),
+      joinedAt: new Date().toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
+    };
+    const updatedAccounts = [...customerAccounts, newCustomer];
+    setCustomerAccounts(updatedAccounts);
+    setCurrentUser(newCustomer);
+    try {
+      localStorage.setItem('taaga_customer_accounts', JSON.stringify(updatedAccounts));
+      localStorage.setItem('taaga_current_user', JSON.stringify(newCustomer));
+    } catch (e) {}
+    showToast(`Welcome to House of Taaga, ${newCustomer.fullName}! ♡`);
+    return newCustomer;
+  };
+
+  const loginCustomer = ({ mobile, password }) => {
+    const cleanMobile = (mobile || '').replace(/[^0-9]/g, '');
+    const account = customerAccounts.find(acc => acc.mobile === cleanMobile);
+    if (!account) {
+      throw new Error('No account found with this mobile number. Please sign up first.');
+    }
+    if (account.password !== password) {
+      throw new Error('Incorrect password. Please try again.');
+    }
+    setCurrentUser(account);
+    try {
+      localStorage.setItem('taaga_current_user', JSON.stringify(account));
+    } catch (e) {}
+    showToast(`Welcome back, ${account.fullName}!`);
+    return account;
+  };
+
+  const logoutCustomer = () => {
+    setCurrentUser(null);
+    try {
+      localStorage.removeItem('taaga_current_user');
+    } catch (e) {}
+    showToast('Logged out successfully');
+  };
+
+  const updateCustomerProfile = (updates) => {
+    if (!currentUser) return;
+    const updatedUser = { ...currentUser, ...updates };
+    setCurrentUser(updatedUser);
+    const updatedAccounts = customerAccounts.map(acc => 
+      acc.mobile === currentUser.mobile ? updatedUser : acc
+    );
+    setCustomerAccounts(updatedAccounts);
+    try {
+      localStorage.setItem('taaga_current_user', JSON.stringify(updatedUser));
+      localStorage.setItem('taaga_customer_accounts', JSON.stringify(updatedAccounts));
+    } catch (e) {}
+    showToast('Profile updated successfully');
+  };
+
   // Cart state with safe normalization
   const [cart, setCart] = useState(() => {
     try {
@@ -1014,6 +1101,11 @@ export const StoreProvider = ({ children }) => {
         setIsContactOpen,
         isAboutOpen,
         setIsAboutOpen,
+        currentUser,
+        signUpCustomer,
+        loginCustomer,
+        logoutCustomer,
+        updateCustomerProfile,
         wishlist,
         toggleWishlist,
         isWishlisted,

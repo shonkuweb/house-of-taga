@@ -194,14 +194,32 @@ export const Footer = () => {
               </h4>
               <ul className="space-y-1.5 text-xs font-sans font-normal text-white/80">
                 <li>
-                  <button onClick={() => setIsAboutOpen(true)} className="hover:text-white transition-colors cursor-pointer text-left">
+                  <button 
+                    onClick={() => {
+                      const el = document.getElementById('our-story-section');
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                      else {
+                        navigate('/');
+                        setTimeout(() => {
+                          const target = document.getElementById('our-story-section');
+                          if (target) target.scrollIntoView({ behavior: 'smooth' });
+                        }, 150);
+                      }
+                    }} 
+                    className="hover:text-white transition-colors cursor-pointer text-left"
+                  >
                     Our Story
                   </button>
                 </li>
                 <li>
-                  <button onClick={() => setIsContactOpen(true)} className="hover:text-white transition-colors cursor-pointer text-left">
+                  <a 
+                    href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent('Hello House of Taaga, I would like to get in touch with your Pune studio.')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-white transition-colors cursor-pointer text-left block"
+                  >
                     Contact Studio
-                  </button>
+                  </a>
                 </li>
                 <li>
                   <button onClick={() => navigate('/order')} className="hover:text-white transition-colors cursor-pointer text-left">

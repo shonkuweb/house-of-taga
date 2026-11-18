@@ -1,112 +1,140 @@
 import React from 'react';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight, Users } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
-import { BougainvilleaSprig, TornPaperEdge } from './FloralDecorations';
+
+// Intricate Golden Lotus Emblem
+const LotusEmblem = ({ className = "w-5 h-5 text-[#C4924D]" }) => (
+  <svg 
+    viewBox="0 0 48 36" 
+    fill="none" 
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    aria-hidden="true"
+  >
+    <path 
+      d="M24 2C24 2 20 12 20 22C20 25.5 21.8 28 24 28C26.2 28 28 25.5 28 22C28 12 24 2 24 2Z" 
+      stroke="currentColor" 
+      strokeWidth="1.6" 
+      fill="#FFF9F2" 
+    />
+    <path 
+      d="M21 9C21 9 14 17 15 25C15.5 28 18 29.5 21 28.5C19 25 19 19 21 9Z" 
+      stroke="currentColor" 
+      strokeWidth="1.4" 
+      fill="#FFF9F2" 
+    />
+    <path 
+      d="M27 9C27 9 34 17 33 25C32.5 28 30 29.5 27 28.5C29 25 29 19 27 9Z" 
+      stroke="currentColor" 
+      strokeWidth="1.4" 
+      fill="#FFF9F2" 
+    />
+    <path 
+      d="M16 19C16 19 8 23 8 28C8 31 12 32 17 30C15 27 15.5 23 16 19Z" 
+      stroke="currentColor" 
+      strokeWidth="1.3" 
+      fill="#FFF9F2" 
+    />
+    <path 
+      d="M32 19C32 19 40 23 40 28C40 31 36 32 31 30C33 27 32.5 23 32 19Z" 
+      stroke="currentColor" 
+      strokeWidth="1.3" 
+      fill="#FFF9F2" 
+    />
+    <path 
+      d="M14 33C19 35 29 35 34 33" 
+      stroke="currentColor" 
+      strokeWidth="1.4" 
+      strokeLinecap="round" 
+    />
+  </svg>
+);
 
 export const OurStorySection = () => {
-  const { setIsAboutOpen } = useStore();
 
   return (
     <section 
       id="our-story-section"
       aria-label="Our Story" 
-      className="relative w-full bg-[#F8F1E7] overflow-hidden my-6 sm:my-10"
+      className="relative w-full bg-[#FAF4ED] overflow-hidden pt-8 sm:pt-14 pb-10 sm:pb-16 select-none border-b border-[#DEC49E]/40"
     >
-      {/* Soft torn-paper edge at the top */}
-      <div className="absolute top-0 left-0 right-0 z-10">
-        <TornPaperEdge className="h-3 sm:h-5 w-full text-[#FAF2E9]" />
-      </div>
-
-      {/* Bougainvillea Flower Sprigs in Corners */}
-      <div className="absolute top-2 left-2 sm:top-4 sm:left-4 z-10 pointer-events-none">
-        <BougainvilleaSprig className="w-24 h-24 sm:w-36 sm:h-36 opacity-90" />
-      </div>
-      <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 z-10 pointer-events-none">
-        <BougainvilleaSprig className="w-24 h-24 sm:w-36 sm:h-36 opacity-90" mirrored />
-      </div>
-
-      {/* Main Story Container */}
-      <div className="max-w-md md:max-w-4xl lg:max-w-5xl mx-auto px-6 py-14 sm:py-20 relative z-20">
-        <div className="flex flex-col md:flex-row items-center gap-8 sm:gap-12 lg:gap-16">
-          
-          {/* 
-            Mother-Daughter Photo in slightly rotated editorial photo frame 
-            with cream border and subtle shadow
-          */}
-          <div className="w-full md:w-1/2 flex justify-center">
-            <div className="relative group max-w-xs sm:max-w-sm w-full">
-              {/* Subtle gold accent frame behind */}
-              <div className="absolute inset-0 bg-[#E8D3AA]/50 rounded-sm transform rotate-1 scale-102 transition-transform duration-500 group-hover:rotate-0" />
-
-              {/* Editorial Frame with Founders Photo */}
-              <div className="relative bg-white p-3 sm:p-4 rounded-sm shadow-editorial transform -rotate-2 group-hover:rotate-0 transition-transform duration-500 border border-[#E8D9C8]">
-                <div className="aspect-[4/5] w-full overflow-hidden bg-[#FAF2E9] rounded-xs">
-                  <img
-                    src="/founders.jpg"
-                    alt="House of Taaga Founders — Mother and Daughter"
-                    className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-103"
-                    loading="lazy"
-                  />
-                </div>
-                {/* Handwritten/Editorial Caption underneath */}
-                <div className="pt-3 pb-1 text-center border-t border-[#F0E4D5] mt-2.5">
-                  <p className="font-serif italic text-xs sm:text-sm text-[#7D5E43] tracking-wide">
-                    Neeta & Riddhi — Founders, House of Taaga
-                  </p>
-                  <p className="text-[9px] font-sans font-medium uppercase tracking-[0.2em] text-[#B65A37] mt-0.5">
-                    Pune Studio • Since 2022
-                  </p>
-                </div>
-              </div>
-
-              {/* Decorative Stamp or Tape effect in top-right */}
-              <div className="absolute -top-3 -right-2 bg-[#FFF9F2]/90 border border-[#C69B52]/50 px-2.5 py-0.5 text-[9px] font-serif uppercase tracking-wider text-[#A7472B] shadow-xs rotate-6">
-                Rooted in Love
-              </div>
-            </div>
-          </div>
-
-          {/* Story Narrative & Call to Action */}
-          <div className="w-full md:w-1/2 text-center md:text-left space-y-4 sm:space-y-5">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FAF2E9] border border-[#E8D9C8] text-[10px] font-sans font-bold uppercase tracking-[0.2em] text-[#B65A37]">
-              <Sparkles className="w-3 h-3 text-[#C69B52]" />
-              <span>The Mother & Daughter Label</span>
-            </div>
-
-            {/* Heading matching prompt exactly */}
-            <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl text-[#382017] font-normal leading-tight tracking-tight">
-              Two generations.<br />
-              <span className="italic text-[#A7472B]">One shared love.</span>
-            </h2>
-
-            {/* Description matching prompt exactly */}
-            <p className="font-sans text-sm sm:text-base text-[#5A382A] font-light leading-relaxed">
-              "Hi, we’re House of Taaga! A mother-daughter label born from our shared love for Indian wear, thoughtful details, and the joy of building something side by side."
-            </p>
-
-            <p className="font-sans text-xs sm:text-sm text-[#7D5E43] font-light leading-relaxed hidden sm:block">
-              Every piece in our collection is curated in Pune with reverence for slow fashion, natural textiles, and the cherished rituals of Indian dressing.
-            </p>
-
-            {/* Terracotta CTA Button matching prompt */}
-            <div className="pt-2">
-              <button
-                onClick={() => setIsAboutOpen(true)}
-                className="inline-flex items-center gap-2.5 px-6 sm:px-7 py-3 bg-[#B65A37] hover:bg-[#A7472B] text-[#FFF9F2] rounded-full text-xs font-sans font-semibold uppercase tracking-wider shadow-soft hover:shadow-editorial transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
-              >
-                <span>Discover Our Story</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
+      
+      {/* Background Soft Grain & Texture Accent */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10 text-center">
+        
+        {/* ========================================================
+            FOUNDERS POLAROID ARTWORK (MATCHING IMAGE 2 EXACTLY)
+            - Gold Arched Wireframe behind
+            - Tilted Royal Wine Brocade Card
+            - Founders Polaroid with caption:
+              "Maa & Me — Two Generations, One Love for Indian Wear"
+              "— PURE STUDIO • SINCE 2023 —"
+            - Pinned Gold "OUR STORY" Lotus Ticket
+            - Pink Botanical Blossom Sprigs on Left & Right
+           ======================================================== */}
+        <div className="relative w-full max-w-[360px] sm:max-w-[440px] md:max-w-[480px] mx-auto mb-4 sm:mb-6">
+          <img 
+            src="/our-story-founders-card.png" 
+            alt="Maa & Me — Neeta & Riddhi, House of Taaga Founders" 
+            className="w-full h-auto object-contain mx-auto filter drop-shadow-md hover:scale-[1.01] transition-transform duration-500" 
+          />
         </div>
+
+        {/* ========================================================
+            THE MOTHER & DAUGHTER LABEL PILL BADGE
+           ======================================================== */}
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FAF3EA] border border-[#C4924D]/70 shadow-2xs mb-3.5">
+          <Users className="w-3.5 h-3.5 text-[#8C2436]" />
+          <span className="text-[10px] sm:text-[11px] font-sans font-bold uppercase tracking-[0.22em] text-[#8C2436]">
+            THE MOTHER & DAUGHTER LABEL
+          </span>
+        </div>
+
+        {/* ========================================================
+            TWO GENERATIONS, ONE SHARED LOVE HEADLINE
+           ======================================================== */}
+        <h2 className="font-serif text-3xl sm:text-4xl lg:text-[44px] text-[#270803] font-medium leading-tight">
+          Two Generations,
+          <span className="block font-serif italic text-3xl sm:text-4xl lg:text-[44px] text-[#6B0D23] font-normal leading-tight mt-0.5">
+            One Shared Love.
+          </span>
+        </h2>
+
+        {/* ========================================================
+            CENTERED GOLD LOTUS EMBLEM DIVIDER
+           ======================================================== */}
+        <div className="flex items-center justify-center gap-2.5 sm:gap-3.5 my-3 sm:my-3.5">
+          <span className="h-px w-8 sm:w-16 bg-[#DEC49E]" />
+          <LotusEmblem className="w-4 h-4 sm:w-5 sm:h-5 text-[#C4924D]" />
+          <span className="h-px w-8 sm:w-16 bg-[#DEC49E]" />
+        </div>
+
+        {/* ========================================================
+            STORY NARRATIVE PARAGRAPH
+           ======================================================== */}
+        <p className="font-serif text-sm sm:text-base text-[#4A3B32] leading-relaxed max-w-lg mx-auto px-4">
+          Hi, we’re House of Taaga, a mother–daughter label born from our shared love for Indian wear, thoughtful details, and the joy of building something side by side.
+        </p>
+
+        {/* ========================================================
+            DISCOVER OUR STORY CTA BUTTON
+           ======================================================== */}
+        <div className="pt-4 pb-2">
+          <button
+            type="button"
+            onClick={() => {
+              const el = document.getElementById('pune-heritage-section') || document.getElementById('catalog-section');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-[#5C061C] via-[#730D26] to-[#5C061C] hover:from-[#450313] hover:to-[#450313] text-[#FFF9F2] rounded-full text-xs font-sans font-bold uppercase tracking-[0.18em] shadow-lg shadow-[#5C061C]/25 transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer"
+          >
+            <span>DISCOVER OUR STORY</span>
+            <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
+          </button>
+        </div>
+
       </div>
 
-      {/* Soft torn-paper edge at the bottom */}
-      <div className="absolute bottom-0 left-0 right-0 z-10">
-        <TornPaperEdge flip className="h-3 sm:h-5 w-full text-[#FAF2E9]" />
-      </div>
     </section>
   );
 };

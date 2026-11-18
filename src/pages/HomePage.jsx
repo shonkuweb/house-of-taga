@@ -3,7 +3,7 @@ import { HeroSection } from '../components/HeroSection';
 import { ShopByCategory } from '../components/ShopByCategory';
 import { ProductCatalog } from '../components/ProductCatalog';
 import { OurStorySection } from '../components/OurStorySection';
-import { TaagaJournalSection } from '../components/TaagaJournalSection';
+import { CustomerReviewsSection } from '../components/CustomerReviewsSection';
 import { TrustFeaturesSection } from '../components/TrustFeaturesSection';
 import { PuneHeritageSection } from '../components/PuneHeritageSection';
 import { Footer } from '../components/Footer';
@@ -40,12 +40,11 @@ export const HomePage = () => {
       <OurStorySection />
 
       {/* 
-        SECTION 7: THE TAAGA JOURNAL
-        Centered heading: "The Taaga Journal"
-        Subtitle: "LOOKBOOK • PEOPLE • BEHIND THE LABEL"
-        Horizontally scrollable editorial cards.
+        SECTION 7: CUSTOMER REVIEWS (OVAL STRIPS IN DUAL OPPOSING LOOPS)
+        Centered heading with floral divider,
+        Two infinite running strips with oval patron reviews.
       */}
-      <TaagaJournalSection />
+      <CustomerReviewsSection />
 
       {/* 
         SECTION 8: TRUST FEATURES

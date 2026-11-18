@@ -113,6 +113,24 @@ export const Header = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCollectionExpanded, setIsCollectionExpanded] = useState(false);
 
+  const scrollToStory = () => {
+    setIsDrawerOpen(false);
+    navigate('/');
+    setTimeout(() => {
+      const el = document.getElementById('our-story-section');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }, 150);
+  };
+
+  const scrollToContact = () => {
+    setIsDrawerOpen(false);
+    navigate('/');
+    setTimeout(() => {
+      const el = document.getElementById('pune-heritage-section') || document.getElementById('footer-section');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }, 150);
+  };
+
   const phone = storeConfig?.whatsappNumber || '+91 93133 06258';
   const cleanPhone = phone.replace(/[^0-9]/g, '');
 
@@ -273,12 +291,12 @@ export const Header = () => {
               <span className="font-medium hidden xl:inline">Wishlist</span>
             </button>
 
-            {/* Account / Admin Portal */}
+            {/* Patron Account Portal */}
             <button
-              onClick={() => navigate('/admin')}
+              onClick={() => navigate('/account')}
               className="p-1.5 sm:p-2 text-[#382017] hover:text-[#B65A37] hover:bg-[#FAF2E9] rounded-full transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-sans"
-              aria-label="Account / Admin Portal"
-              title="Admin & Account"
+              aria-label="Patron Account"
+              title="My Account"
             >
               <User className="w-4 h-4 sm:w-5 sm:h-5 stroke-[1.8]" />
               <span className="font-medium hidden xl:inline">Account</span>
@@ -344,10 +362,10 @@ export const Header = () => {
             className="absolute inset-0 bg-[#270803]/60 backdrop-blur-xs transition-opacity duration-300"
           />
 
-          <div className="absolute inset-y-0 left-0 max-w-[340px] w-full bg-[#FCF8F2] shadow-2xl flex flex-col justify-between border-r border-[#E8D9C8] overflow-y-auto">
+          <div className="absolute inset-y-0 left-0 max-w-[340px] w-full bg-[#FCF8F2] shadow-2xl flex flex-col border-r border-[#E8D9C8] h-full overflow-hidden">
             
-            {/* Top Brand Header with Faint Floral Watermark */}
-            <div className="relative pt-6 pb-4 px-6 border-b border-[#EAD7C5] bg-[#FAF3EA] overflow-hidden">
+            {/* Top Brand Header with Faint Floral Watermark (Sticky Locked Header) */}
+            <div className="relative pt-5 pb-3.5 px-6 border-b border-[#EAD7C5] bg-[#FAF3EA] shrink-0 z-20">
               {/* Corner Watermark */}
               <img 
                 src="/yellow-floral.png" 
@@ -355,25 +373,27 @@ export const Header = () => {
                 className="absolute -top-6 -right-6 w-32 h-32 object-contain opacity-25 pointer-events-none filter saturate-75"
               />
 
-              <div className="relative z-10 flex items-start justify-between">
-                <div>
-                  <span className="block text-[11px] font-serif uppercase tracking-[0.25em] text-[#6B0D23] font-medium leading-tight">
-                    HOUSE OF
-                  </span>
-                  <div className="relative inline-block mt-0.5">
-                    <span className="block font-serif text-2xl font-bold tracking-[0.12em] text-[#6B0D23]">
-                      TAAGA
-                    </span>
-                    {/* Delicate curved arch underline */}
-                    <svg viewBox="0 0 70 8" fill="none" className="w-full h-2 mt-0.5" preserveAspectRatio="none">
-                      <path d="M1 2C22 7 48 7 69 2" stroke="#6B0D23" strokeWidth="1.2" strokeLinecap="round" />
-                    </svg>
-                  </div>
-                </div>
+              <div className="relative z-10 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsDrawerOpen(false);
+                    navigate('/');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="flex items-center text-left cursor-pointer group py-1"
+                  aria-label="House of Taaga Home"
+                >
+                  <img 
+                    src="/logo-transparent.png" 
+                    alt="House of Taaga" 
+                    className="h-9 sm:h-10 w-auto max-w-[150px] object-contain transition-transform duration-300 group-hover:scale-105"
+                  />
+                </button>
 
                 <button
                   onClick={() => setIsDrawerOpen(false)}
-                  className="p-1.5 text-[#6B0D23] hover:text-[#5C061C] hover:bg-[#6B0D23]/10 rounded-full transition-colors"
+                  className="p-1.5 text-[#6B0D23] hover:text-[#5C061C] hover:bg-[#6B0D23]/10 rounded-full transition-colors cursor-pointer"
                   aria-label="Close menu"
                 >
                   <X className="w-6 h-6 stroke-[1.5]" />
@@ -381,8 +401,8 @@ export const Header = () => {
               </div>
             </div>
 
-            {/* Drawer Body Items */}
-            <div className="px-6 py-5 flex-1 space-y-5">
+            {/* Drawer Body Items (Scrollable Container) */}
+            <div className="px-6 py-5 flex-1 space-y-5 overflow-y-auto">
               
               {/* ================= SECTION 1: DISCOVER ================= */}
               <div>
@@ -463,13 +483,10 @@ export const Header = () => {
                     )}
                   </div>
 
-                  {/* About us */}
+                  {/* About us (Smooth scroll to Our Story without modal) */}
                   <button
-                    onClick={() => {
-                      setIsDrawerOpen(false);
-                      setIsAboutOpen(true);
-                    }}
-                    className="w-full flex items-center justify-between group py-1 text-left"
+                    onClick={scrollToStory}
+                    className="w-full flex items-center justify-between group py-1 text-left cursor-pointer"
                   >
                     <div className="flex items-center gap-3.5">
                       <Info className="w-5 h-5 text-[#6B0D23] stroke-[1.8] group-hover:scale-105 transition-transform" />
@@ -480,13 +497,10 @@ export const Header = () => {
                     <ChevronRight className="w-4 h-4 text-[#C4924D] group-hover:translate-x-0.5 transition-transform" />
                   </button>
 
-                  {/* Contact */}
+                  {/* Contact (Smooth scroll to Studio Contact without modal) */}
                   <button
-                    onClick={() => {
-                      setIsDrawerOpen(false);
-                      setIsContactOpen(true);
-                    }}
-                    className="w-full flex items-center justify-between group py-1 text-left"
+                    onClick={scrollToContact}
+                    className="w-full flex items-center justify-between group py-1 text-left cursor-pointer"
                   >
                     <div className="flex items-center gap-3.5">
                       <Mail className="w-5 h-5 text-[#6B0D23] stroke-[1.8] group-hover:scale-105 transition-transform" />
@@ -515,13 +529,10 @@ export const Header = () => {
                 </div>
 
                 <nav className="space-y-3.5">
-                  {/* Our Story */}
+                  {/* Our Story (Smooth scroll without modal) */}
                   <button
-                    onClick={() => {
-                      setIsDrawerOpen(false);
-                      setIsAboutOpen(true);
-                    }}
-                    className="w-full flex items-center justify-between group py-1 text-left"
+                    onClick={scrollToStory}
+                    className="w-full flex items-center justify-between group py-1 text-left cursor-pointer"
                   >
                     <div className="flex items-center gap-3.5">
                       <Sparkles className="w-5 h-5 text-[#6B0D23] stroke-[1.8] group-hover:scale-105 transition-transform" />

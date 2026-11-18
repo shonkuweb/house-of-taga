@@ -25,7 +25,11 @@ export const TrustFeaturesSection = () => {
       icon: MessageCircleHeart,
       title: 'Friendly Support',
       subtitle: 'Direct WhatsApp concierge',
-      onClick: () => setIsContactOpen(true),
+      onClick: () => {
+        const phone = storeConfig?.whatsappNumber || '+91 93133 06258';
+        const clean = phone.replace(/[^0-9]/g, '');
+        window.open(`https://wa.me/${clean}?text=${encodeURIComponent('Hello House of Taaga, I need assistance with my order / styling.')}`, '_blank');
+      },
     },
   ];
 

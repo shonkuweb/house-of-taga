@@ -67,3 +67,58 @@
   animation: fadeIn 0.2s ease-out forwards;
 }
 
+/* Infinite Marquee Animations for Customer Reviews */
+@keyframes marquee-ltr {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes marquee-rtl {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee-ltr {
+  display: flex;
+  width: max-content;
+  animation: marquee-ltr 40s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee-rtl {
+  display: flex;
+  width: max-content;
+  animation: marquee-rtl 40s linear infinite;
+  will-change: transform;
+}
+
+@media (max-width: 640px) {
+  .animate-marquee-ltr {
+    animation-duration: 30s;
+  }
+  .animate-marquee-rtl {
+    animation-duration: 30s;
+  }
+}
+
+/* Pause marquee when hovered or tapped/active */
+.animate-marquee-ltr:hover,
+.animate-marquee-rtl:hover,
+.animate-marquee-ltr:active,
+.animate-marquee-rtl:active,
+.marquee-track:hover .animate-marquee-ltr,
+.marquee-track:hover .animate-marquee-rtl,
+.marquee-track:active .animate-marquee-ltr,
+.marquee-track:active .animate-marquee-rtl {
+  animation-play-state: paused;
+}
+
+

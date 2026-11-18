@@ -139,10 +139,10 @@ export const ProductCatalog = () => {
                 <article
                   key={product.id}
                   onClick={() => handleOpenProductPage(product)}
-                  className="group flex flex-col bg-[#FAF5EF] rounded-[24px] sm:rounded-3xl overflow-hidden border border-[#DEC49E]/80 shadow-xs hover:shadow-xl transition-all duration-500 cursor-pointer select-none relative"
+                  className="group flex flex-col bg-[#FAF5EF] rounded-2xl sm:rounded-[22px] overflow-hidden border border-[#DEC49E]/80 shadow-xs hover:shadow-xl transition-all duration-500 cursor-pointer select-none relative"
                 >
-                  {/* Portrait Product Image Card */}
-                  <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#FAF5EF]">
+                  {/* Compact Portrait Product Image Card */}
+                  <div className="relative aspect-[4/4.3] w-full overflow-hidden bg-[#FAF5EF]">
                     <img
                       src={product.imageUrl || (product.images && product.images[0]) || '/category-kurtas.jpg'}
                       alt={product.title}
@@ -151,8 +151,8 @@ export const ProductCatalog = () => {
                     />
 
                     {/* Top-Left Bestseller / Tag Badge */}
-                    <span className="absolute top-2.5 sm:top-3 left-2.5 sm:left-3 bg-[#5C061C] text-[#FFF9F2] text-[9px] sm:text-[10px] font-sans font-bold tracking-wider uppercase px-2.5 sm:px-3 py-1 rounded-full shadow-md flex items-center gap-1 z-10">
-                      <span className="text-[#F3D7AB] text-xs leading-none">✦</span>
+                    <span className="absolute top-2 sm:top-2.5 left-2 sm:left-2.5 bg-[#5C061C] text-[#FFF9F2] text-[8.5px] sm:text-[9.5px] font-sans font-bold tracking-wider uppercase px-2 sm:px-2.5 py-0.5 rounded-full shadow-md flex items-center gap-1 z-10">
+                      <span className="text-[#F3D7AB] text-[10px] leading-none">✦</span>
                       <span>{product.tag || 'BESTSELLER'}</span>
                     </span>
 
@@ -160,11 +160,11 @@ export const ProductCatalog = () => {
                     <button
                       type="button"
                       onClick={(e) => handleWishlistClick(e, product.id)}
-                      className="absolute top-2.5 sm:top-3 right-2.5 sm:right-3 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#FFF9F2]/95 hover:bg-white backdrop-blur-xs flex items-center justify-center transition-all duration-200 active:scale-90 hover:scale-105 shadow-md border border-[#E8D9C8]/70 cursor-pointer z-10"
+                      className="absolute top-2 sm:top-2.5 right-2 sm:right-2.5 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FFF9F2]/95 hover:bg-white backdrop-blur-xs flex items-center justify-center transition-all duration-200 active:scale-90 hover:scale-105 shadow-md border border-[#E8D9C8]/70 cursor-pointer z-10"
                       aria-label={wishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
                     >
                       <Heart 
-                        className={`w-4 h-4 transition-colors ${
+                        className={`w-3.5 h-3.5 transition-colors ${
                           wishlisted 
                             ? 'fill-[#5C061C] text-[#5C061C]' 
                             : 'text-[#5C061C] stroke-[2]'
@@ -174,12 +174,12 @@ export const ProductCatalog = () => {
                   </div>
 
                   {/* Bottom Mughal Arch Info Panel Overlapping Image */}
-                  <div className="-mt-5 sm:-mt-6 relative z-10 flex flex-col flex-1">
+                  <div className="-mt-3.5 sm:-mt-4 relative z-10 flex flex-col flex-1">
                     {/* Curved Arch Line with Lotus Crest */}
                     <div className="relative w-full overflow-hidden -mb-[1px]">
                       <svg 
                         viewBox="0 0 400 32" 
-                        className="w-full h-5 sm:h-6 block text-[#FFF9F2]" 
+                        className="w-full h-3.5 sm:h-4 block text-[#FFF9F2]" 
                         preserveAspectRatio="none"
                       >
                         <path 
@@ -195,8 +195,8 @@ export const ProductCatalog = () => {
                       </svg>
                       
                       {/* Centered Lotus Crest on Peak */}
-                      <div className="absolute left-1/2 -top-1.5 -translate-x-1/2 flex items-center justify-center z-20 pointer-events-none">
-                        <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#B88A58]" fill="none" stroke="currentColor">
+                      <div className="absolute left-1/2 -top-1 -translate-x-1/2 flex items-center justify-center z-20 pointer-events-none">
+                        <svg viewBox="0 0 24 24" className="w-4 h-4 text-[#B88A58]" fill="none" stroke="currentColor">
                           <path d="M12 4 C12 4 9.5 8.5 9.5 12.5 C9.5 15 10.7 16.5 12 16.5 C13.3 16.5 14.5 15 14.5 12.5 C14.5 8.5 12 4 12 4 Z" strokeWidth="1.2" fill="#FFF9F2" />
                           <path d="M9.5 12.5 C7.5 10 5 11 5 13.5 C5 16 7.5 16.5 9.5 16" strokeWidth="1.2" />
                           <path d="M14.5 12.5 C16.5 10 19 11 19 13.5 C19 16 16.5 16.5 14.5 16" strokeWidth="1.2" />
@@ -205,11 +205,11 @@ export const ProductCatalog = () => {
                     </div>
 
                     {/* Cream Info Box with Corner Floral Accents */}
-                    <div className="bg-[#FFF9F2] px-3.5 sm:px-4 pt-1 pb-3.5 sm:pb-4 flex flex-col flex-1 justify-between relative overflow-hidden">
+                    <div className="bg-[#FFF9F2] px-3 sm:px-3.5 pt-0.5 pb-2.5 sm:pb-3 flex flex-col flex-1 justify-between relative overflow-hidden">
                       {/* Subtle Corner Floral Line Art (Left & Right) */}
                       <svg 
                         viewBox="0 0 70 70" 
-                        className="absolute -bottom-1 -left-1 w-12 h-12 sm:w-14 sm:h-14 text-[#DEC49E] opacity-50 pointer-events-none" 
+                        className="absolute -bottom-1 -left-1 w-10 h-10 text-[#DEC49E] opacity-40 pointer-events-none" 
                         fill="none" 
                         stroke="currentColor" 
                         strokeWidth="0.8"
@@ -223,7 +223,7 @@ export const ProductCatalog = () => {
 
                       <svg 
                         viewBox="0 0 70 70" 
-                        className="absolute -bottom-1 -right-1 w-12 h-12 sm:w-14 sm:h-14 text-[#DEC49E] opacity-50 pointer-events-none transform -scale-x-100" 
+                        className="absolute -bottom-1 -right-1 w-10 h-10 text-[#DEC49E] opacity-40 pointer-events-none transform -scale-x-100" 
                         fill="none" 
                         stroke="currentColor" 
                         strokeWidth="0.8"
@@ -237,38 +237,38 @@ export const ProductCatalog = () => {
 
                       {/* Category & Title */}
                       <div className="relative z-10">
-                        <span className="text-[10px] sm:text-[11px] font-sans font-bold tracking-[0.2em] text-[#C4924D] uppercase block">
+                        <span className="text-[8.5px] sm:text-[9.5px] font-sans font-bold tracking-[0.18em] text-[#C4924D] uppercase block">
                           {product.category || 'KURTAS'}
                         </span>
-                        <h3 className="font-serif text-sm sm:text-base font-medium text-[#270803] group-hover:text-[#5C061C] transition-colors truncate mt-0.5 leading-snug">
+                        <h3 className="font-serif text-[13px] sm:text-[14px] font-medium text-[#270803] group-hover:text-[#5C061C] transition-colors truncate mt-0.5 leading-tight">
                           {product.title}
                         </h3>
                       </div>
 
-                      {/* Pricing Row */}
-                      <div className="mt-1.5 flex items-center gap-2 relative z-10 flex-wrap">
-                        <span className="font-serif font-bold text-lg sm:text-xl text-[#5C061C]">
+                      {/* Pricing Row with Clean Modern Sans Lining Numerals */}
+                      <div className="mt-1 flex items-baseline gap-1.5 sm:gap-2 relative z-10 flex-wrap">
+                        <span className="font-sans font-bold text-base sm:text-[17px] text-[#5C061C] tracking-tight tabular-nums">
                           ₹{product.price.toLocaleString('en-IN')}
                         </span>
                         {(product.originalPrice || hasDiscount) && (
-                          <span className="font-sans text-xs sm:text-sm text-[#9E9E9E] line-through font-normal">
+                          <span className="font-sans text-[11px] sm:text-xs text-[#9E9E9E] line-through font-normal tabular-nums">
                             ₹{(product.originalPrice || Math.round(product.price * 1.25)).toLocaleString('en-IN')}
                           </span>
                         )}
-                        <span className="text-[9px] sm:text-[10px] font-sans font-bold text-[#8C2436] bg-[#FCE7E6] px-2 py-0.5 rounded-full">
+                        <span className="text-[8.5px] sm:text-[9px] font-sans font-bold text-[#8C2436] bg-[#FCE7E6] px-1.5 py-0.5 rounded-full tabular-nums">
                           {discountPercent}% OFF
                         </span>
                       </div>
 
                       {/* Add to Cart Button flanked by thin decorative hairlines */}
-                      <div className="mt-2.5 sm:mt-3 flex items-center gap-2 relative z-10">
+                      <div className="mt-2 sm:mt-2.5 flex items-center gap-1.5 sm:gap-2 relative z-10">
                         <span className="h-[1px] flex-1 bg-[#DEC49E]/70" />
                         <button
                           type="button"
                           onClick={(e) => handleQuickAdd(e, product)}
-                          className="px-3.5 sm:px-5 py-1.5 sm:py-2 bg-[#5C061C] hover:bg-[#480516] text-[#FFF9F2] rounded-full text-[10px] sm:text-[11px] font-sans font-bold tracking-wider uppercase flex items-center justify-center gap-1.5 shadow-xs transition-all duration-200 transform active:scale-95 cursor-pointer whitespace-nowrap"
+                          className="px-3 sm:px-4 py-1.5 bg-[#5C061C] hover:bg-[#480516] text-[#FFF9F2] rounded-full text-[9px] sm:text-[9.5px] font-sans font-bold tracking-wider uppercase flex items-center justify-center gap-1 shadow-xs transition-all duration-200 transform active:scale-95 cursor-pointer whitespace-nowrap"
                         >
-                          <ShoppingBag className="w-3.5 h-3.5" />
+                          <ShoppingBag className="w-3 h-3" />
                           <span>ADD TO CART</span>
                         </button>
                         <span className="h-[1px] flex-1 bg-[#DEC49E]/70" />

@@ -178,11 +178,11 @@ export const ProductDetailModal = () => {
 
             {/* Pricing */}
             <div className="flex items-baseline gap-2.5 pb-3 border-b border-[#EAE0D4]">
-              <span className="font-serif text-2xl font-semibold text-[#1E1A17]">
+              <span className="font-sans text-2xl font-bold text-[#1E1A17] tabular-nums tracking-tight">
                 ₹{selectedProduct.price.toLocaleString('en-IN')}
               </span>
               {selectedProduct.originalPrice > selectedProduct.price && (
-                <span className="text-sm text-neutral-400 line-through">
+                <span className="font-sans text-sm text-neutral-400 line-through tabular-nums">
                   ₹{selectedProduct.originalPrice.toLocaleString('en-IN')}
                 </span>
               )}

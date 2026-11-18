@@ -37,6 +37,11 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-houseoftaaga}
       POSTGRES_USER: ${POSTGRES_USER:-taaga_admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-taaga_secure_pass_2026}
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-d098e896b8f7dc0403ad3a16f592dfe6}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-f95b6dce449f4bb721ce54aa3b2f4e2b}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-401cb76e46f0f908fcd78b5b2fbd75e92a4bbc1d26adbffbb3c37ef14fcc2ca1}
+      R2_BUCKET_NAME: ${R2_BUCKET_NAME:-chf-media}
+      R2_PUBLIC_URL: ${R2_PUBLIC_URL:-https://pub-ce8688bc6c654bcfb99716f7c9373bcd.r2.dev}
     volumes:
       - uploads_data:/app/uploads
       - store_data:/app/data
