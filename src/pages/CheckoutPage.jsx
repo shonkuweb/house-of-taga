@@ -61,7 +61,7 @@ export const CheckoutPage = () => {
     };
   }).filter(res => !res.isDeliverable);
 
-  const boutiquePhone = storeConfig?.whatsappNumber || '+91 93133 06258';
+  const boutiquePhone = storeConfig?.whatsappNumber || '+91 90966 69212';
   const cleanPhone = boutiquePhone.replace(/[^0-9]/g, '');
   const waTarget = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
 

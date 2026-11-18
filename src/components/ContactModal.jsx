@@ -15,8 +15,8 @@ export const ContactModal = () => {
   const [isSuccessAnimating, setIsSuccessAnimating] = useState(false);
   const [progressWidth, setProgressWidth] = useState(0);
 
-  // Business WhatsApp number: 9313306258 (Pooja Lace HUB Surat)
-  const BUSINESS_WHATSAPP_NUMBER = (storeConfig?.whatsappNumber || '919313306258').replace(/[^0-9]/g, '');
+  // Business WhatsApp number: 9096669212 (House of Taaga)
+  const BUSINESS_WHATSAPP_NUMBER = (storeConfig?.whatsappNumber || '919096669212').replace(/[^0-9]/g, '');
 
   useEffect(() => {
     if (!isContactOpen) {
@@ -128,7 +128,7 @@ _Sent via House of Taaga Boutique Portal_`;
                 Rooted in love. Worn with grace.
               </p>
               <p className="text-[10px] text-[#7A112A] mt-0.5">
-                WhatsApp: <strong>+91 93133 06258</strong> • @house_of_taaga
+                WhatsApp: <strong>+91 90966 69212</strong> • @house_of_taaga
               </p>
             </div>
 
@@ -157,7 +157,7 @@ _Sent via House of Taaga Boutique Portal_`;
                 <input
                   type="tel"
                   required
-                  placeholder="e.g. 9313306258"
+                  placeholder="e.g. 9096669212"
                   value={formData.phone}
                   onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                   className="w-full p-3 bg-white border border-[#DECBB8] rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-brand-700"
@@ -172,7 +172,7 @@ _Sent via House of Taaga Boutique Portal_`;
                 <textarea
                   rows={3}
                   required
-                  placeholder="Inquire about Unique Laces, Latkans, Brooches, Banjara patches, Gota work, custom orders..."
+                  placeholder="Inquire about custom orders, sizing, styling guidance..."
                   value={formData.message}
                   onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
                   className="w-full p-3 bg-white border border-[#DECBB8] rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-brand-700"
@@ -189,7 +189,7 @@ _Sent via House of Taaga Boutique Portal_`;
                   <span>Send via WhatsApp</span>
                 </button>
                 <p className="text-[10px] text-center text-neutral-500 mt-2">
-                  Opens directly to WhatsApp with <strong>+91 93133 06258</strong>
+                  Opens directly to WhatsApp with <strong>+91 90966 69212</strong>
                 </p>
               </div>
             </form>

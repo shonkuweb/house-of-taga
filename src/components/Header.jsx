@@ -131,7 +131,7 @@ export const Header = () => {
     }, 150);
   };
 
-  const phone = storeConfig?.whatsappNumber || '+91 93133 06258';
+  const phone = storeConfig?.whatsappNumber || '+91 90966 69212';
   const cleanPhone = phone.replace(/[^0-9]/g, '');
 
   const handleCategoryNav = (slug) => {

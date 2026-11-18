@@ -73,9 +73,18 @@ export const StoreProvider = ({ children }) => {
           parsed.whatsappNumber === '8511556155' ||
           parsed.whatsappNumber === '+91 98557 86123' ||
           parsed.whatsappNumber === '9855786123' ||
+          parsed.whatsappNumber === '+91 93133 06258' ||
+          parsed.whatsappNumber === '9313306258' ||
+          parsed.whatsappNumber === '919313306258' ||
           !parsed.whatsappNumber
         ) {
-          parsed.whatsappNumber = '+91 93133 06258';
+          parsed.whatsappNumber = '+91 90966 69212';
+        }
+        if (parsed.hero?.belowTicker?.includes('93133')) {
+          parsed.hero.belowTicker = 'House of Taaga · Pune Studio, Maharashtra, India | WhatsApp: +91 90966 69212';
+        }
+        if (parsed.bannerText?.includes('93133')) {
+          parsed.bannerText = 'Handcrafted in Pune · Worldwide & Pan-India Shipping · WhatsApp Orders: +91 90966 69212';
         }
         if (
           !parsed.storeName ||

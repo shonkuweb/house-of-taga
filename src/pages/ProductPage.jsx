@@ -45,7 +45,7 @@ export const ProductPage = () => {
   // Available apparel sizes
   const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
-  const phone = storeConfig?.whatsappNumber || '+91 93133 06258';
+  const phone = storeConfig?.whatsappNumber || '+91 90966 69212';
   const cleanPhone = phone.replace(/[^0-9]/g, '');
 
   // Scroll to top and reset gallery when product changes

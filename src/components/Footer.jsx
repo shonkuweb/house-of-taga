@@ -26,7 +26,7 @@ export const Footer = () => {
   const [emailInput, setEmailInput] = useState('');
   const [isSubscribed, setIsSubscribed] = useState(false);
 
-  const phone = storeConfig?.whatsappNumber || '+91 93133 06258';
+  const phone = storeConfig?.whatsappNumber || '+91 90966 69212';
   const cleanPhone = phone.replace(/[^0-9]/g, '');
   const email = storeConfig?.supportEmail || 'care@houseoftaaga.com';
 

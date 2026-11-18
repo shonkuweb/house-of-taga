@@ -35,7 +35,7 @@ export const OrderSection = () => {
   const [searchError, setSearchError] = useState('');
   const [isSearching, setIsSearching] = useState(false);
 
-  const rawPhone = storeConfig?.whatsappNumber || '9313306258';
+  const rawPhone = storeConfig?.whatsappNumber || '9096669212';
   const cleanPhone = rawPhone.replace(/[^0-9]/g, '');
   const whatsappPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
 

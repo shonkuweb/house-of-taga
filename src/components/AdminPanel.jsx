@@ -263,7 +263,7 @@ export const AdminPanel = ({ onClose }) => {
   const [heroSettings, setHeroSettings] = useState(() => ({
     mobileBanners: storeConfig?.hero?.mobileBanners || [],
     desktopBanners: storeConfig?.hero?.desktopBanners || ['/hero-banner.jpg'],
-    belowTicker: storeConfig?.hero?.belowTicker || 'House of Taaga · Pune Studio, Maharashtra, India | Call / WhatsApp: +91 93133 06258',
+    belowTicker: storeConfig?.hero?.belowTicker || 'House of Taaga · Pune Studio, Maharashtra, India | Call / WhatsApp: +91 90966 69212',
     endTicker: storeConfig?.hero?.endTicker || '🌿 Each garment is handcrafted with love. Please allow 3–5 days for artisanal finishing and dispatch.'
   }));
 
@@ -2805,7 +2805,7 @@ export const AdminPanel = ({ onClose }) => {
                     required
                     value={productForm.title}
                     onChange={(e) => setProductForm(prev => ({ ...prev, title: e.target.value }))}
-                    placeholder="e.g. Adenium Desert Rose, Alphonso Mango Plant"
+                    placeholder="e.g. Mustard Bandhani Kurta Set, Mulberry Silk Saree"
                     className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm text-[#1C1E21] focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
                   />
                 </div>
@@ -3255,7 +3255,7 @@ export const AdminPanel = ({ onClose }) => {
                     rows={3}
                     value={productForm.description}
                     onChange={(e) => setProductForm(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Tell customers about this plant / handcrafted piece"
+                    placeholder="Describe this handcrafted artisanal piece, silhouette, craftsmanship..."
                     className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
                   />
                 </div>
@@ -3267,25 +3267,13 @@ export const AdminPanel = ({ onClose }) => {
                   </h4>
                   <div>
                     <label className="block text-xs font-semibold text-[#1C1E21] mb-1">
-                      Plant Care Tips
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={productForm.careTips}
-                      onChange={(e) => setProductForm(prev => ({ ...prev, careTips: e.target.value }))}
-                      placeholder="Watering, sunlight, soil and other care instructions"
-                      className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[#1C1E21] mb-1">
                       Delivery &amp; Returns
                     </label>
                     <textarea
                       rows={2}
                       value={productForm.deliveryReturns}
                       onChange={(e) => setProductForm(prev => ({ ...prev, deliveryReturns: e.target.value }))}
-                      placeholder="Delivery times and the return policy for this product"
+                      placeholder="Delivery times and the return/exchange policy for this product"
                       className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
                     />
                   </div>
@@ -3304,7 +3292,7 @@ export const AdminPanel = ({ onClose }) => {
                       type="text"
                       value={productForm.replacement}
                       onChange={(e) => setProductForm(prev => ({ ...prev, replacement: e.target.value }))}
-                      placeholder="e.g. 7-day live plant guarantee"
+                      placeholder="e.g. 7-day easy exchange guarantee"
                       className="w-full px-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#B65A37]/20 focus:border-[#B65A37]"
                     />
                   </div>

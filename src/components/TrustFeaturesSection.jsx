@@ -26,7 +26,7 @@ export const TrustFeaturesSection = () => {
       title: 'Friendly Support',
       subtitle: 'Direct WhatsApp concierge',
       onClick: () => {
-        const phone = storeConfig?.whatsappNumber || '+91 93133 06258';
+        const phone = storeConfig?.whatsappNumber || '+91 90966 69212';
         const clean = phone.replace(/[^0-9]/g, '');
         window.open(`https://wa.me/${clean}?text=${encodeURIComponent('Hello House of Taaga, I need assistance with my order / styling.')}`, '_blank');
       },
