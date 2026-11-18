@@ -132,17 +132,17 @@ export const ProductCatalog = () => {
               const hasDiscount = product.originalPrice && product.originalPrice > product.price;
               const discountPercent = hasDiscount 
                 ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) 
-                : null;
+                : 22;
               const wishlisted = isWishlisted(product.id);
 
               return (
                 <article
                   key={product.id}
                   onClick={() => handleOpenProductPage(product)}
-                  className="group flex flex-col cursor-pointer select-none"
+                  className="group flex flex-col bg-[#FAF5EF] rounded-[24px] sm:rounded-3xl overflow-hidden border border-[#DEC49E]/80 shadow-xs hover:shadow-xl transition-all duration-500 cursor-pointer select-none relative"
                 >
                   {/* Portrait Product Image Card */}
-                  <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden bg-[#FFF9F2] border border-[#E8D9C8]/80 shadow-xs group-hover:shadow-editorial group-hover:-translate-y-1 transition-all duration-500">
+                  <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#FAF5EF]">
                     <img
                       src={product.imageUrl || (product.images && product.images[0]) || '/category-kurtas.jpg'}
                       alt={product.title}
@@ -150,67 +150,129 @@ export const ProductCatalog = () => {
                       loading="lazy"
                     />
 
-                    {/* Tag / Badge */}
-                    {product.tag && (
-                      <span className="absolute top-2.5 left-2.5 bg-[#B65A37]/90 backdrop-blur-xs text-white text-[9px] font-sans font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full shadow-xs">
-                        {product.tag}
-                      </span>
-                    )}
+                    {/* Top-Left Bestseller / Tag Badge */}
+                    <span className="absolute top-2.5 sm:top-3 left-2.5 sm:left-3 bg-[#5C061C] text-[#FFF9F2] text-[9px] sm:text-[10px] font-sans font-bold tracking-wider uppercase px-2.5 sm:px-3 py-1 rounded-full shadow-md flex items-center gap-1 z-10">
+                      <span className="text-[#F3D7AB] text-xs leading-none">✦</span>
+                      <span>{product.tag || 'BESTSELLER'}</span>
+                    </span>
 
-                    {/* Wishlist Heart Icon */}
+                    {/* Top-Right Circular Wishlist Button */}
                     <button
                       type="button"
                       onClick={(e) => handleWishlistClick(e, product.id)}
-                      className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/85 hover:bg-white backdrop-blur-xs flex items-center justify-center transition-transform active:scale-90 shadow-xs cursor-pointer z-10"
+                      className="absolute top-2.5 sm:top-3 right-2.5 sm:right-3 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#FFF9F2]/95 hover:bg-white backdrop-blur-xs flex items-center justify-center transition-all duration-200 active:scale-90 hover:scale-105 shadow-md border border-[#E8D9C8]/70 cursor-pointer z-10"
                       aria-label={wishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
                     >
                       <Heart 
                         className={`w-4 h-4 transition-colors ${
                           wishlisted 
-                            ? 'fill-[#D85179] text-[#D85179]' 
-                            : 'text-[#382017]/70 hover:text-[#D85179]'
+                            ? 'fill-[#5C061C] text-[#5C061C]' 
+                            : 'text-[#5C061C] stroke-[2]'
                         }`} 
                       />
                     </button>
-
-                    {/* Quick Add overlay button on hover (desktop) */}
-                    <div className="absolute inset-x-2.5 bottom-2.5 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 hidden sm:block">
-                      <button
-                        onClick={(e) => handleQuickAdd(e, product)}
-                        className="w-full py-2 bg-[#B65A37] hover:bg-[#A7472B] text-white rounded-xl text-xs font-sans font-medium tracking-wider uppercase flex items-center justify-center gap-1.5 shadow-md transition-colors"
-                      >
-                        <ShoppingBag className="w-3.5 h-3.5" />
-                        <span>Add to Bag</span>
-                      </button>
-                    </div>
                   </div>
 
-                  {/* Product Details */}
-                  <div className="pt-2.5 px-0.5 flex flex-col flex-1 justify-between">
-                    <div>
-                      <span className="text-[10px] font-sans text-[#8C6F5A] tracking-wider uppercase block">
-                        {product.category || 'House of Taaga'}
-                      </span>
-                      <h3 className="font-serif text-sm sm:text-base font-medium text-[#382017] group-hover:text-[#B65A37] transition-colors line-clamp-1 leading-snug mt-0.5">
-                        {product.title}
-                      </h3>
+                  {/* Bottom Mughal Arch Info Panel Overlapping Image */}
+                  <div className="-mt-5 sm:-mt-6 relative z-10 flex flex-col flex-1">
+                    {/* Curved Arch Line with Lotus Crest */}
+                    <div className="relative w-full overflow-hidden -mb-[1px]">
+                      <svg 
+                        viewBox="0 0 400 32" 
+                        className="w-full h-5 sm:h-6 block text-[#FFF9F2]" 
+                        preserveAspectRatio="none"
+                      >
+                        <path 
+                          d="M0 32 C60 32 120 14 175 14 C188 14 194 6 200 6 C206 6 212 14 225 14 C280 14 340 32 400 32 V32 H0 Z" 
+                          fill="currentColor" 
+                        />
+                        <path 
+                          d="M0 32 C60 32 120 14 175 14 C188 14 194 6 200 6 C206 6 212 14 225 14 C280 14 340 32 400 32" 
+                          fill="none" 
+                          stroke="#DEC49E" 
+                          strokeWidth="1.2" 
+                        />
+                      </svg>
+                      
+                      {/* Centered Lotus Crest on Peak */}
+                      <div className="absolute left-1/2 -top-1.5 -translate-x-1/2 flex items-center justify-center z-20 pointer-events-none">
+                        <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#B88A58]" fill="none" stroke="currentColor">
+                          <path d="M12 4 C12 4 9.5 8.5 9.5 12.5 C9.5 15 10.7 16.5 12 16.5 C13.3 16.5 14.5 15 14.5 12.5 C14.5 8.5 12 4 12 4 Z" strokeWidth="1.2" fill="#FFF9F2" />
+                          <path d="M9.5 12.5 C7.5 10 5 11 5 13.5 C5 16 7.5 16.5 9.5 16" strokeWidth="1.2" />
+                          <path d="M14.5 12.5 C16.5 10 19 11 19 13.5 C19 16 16.5 16.5 14.5 16" strokeWidth="1.2" />
+                        </svg>
+                      </div>
                     </div>
 
-                    {/* Pricing in INR */}
-                    <div className="mt-1 flex items-baseline gap-2">
-                      <span className="font-sans font-semibold text-sm sm:text-base text-[#A7472B]">
-                        ₹{product.price.toLocaleString('en-IN')}
-                      </span>
-                      {hasDiscount && (
-                        <>
-                          <span className="font-sans text-xs text-neutral-400 line-through">
-                            ₹{product.originalPrice.toLocaleString('en-IN')}
+                    {/* Cream Info Box with Corner Floral Accents */}
+                    <div className="bg-[#FFF9F2] px-3.5 sm:px-4 pt-1 pb-3.5 sm:pb-4 flex flex-col flex-1 justify-between relative overflow-hidden">
+                      {/* Subtle Corner Floral Line Art (Left & Right) */}
+                      <svg 
+                        viewBox="0 0 70 70" 
+                        className="absolute -bottom-1 -left-1 w-12 h-12 sm:w-14 sm:h-14 text-[#DEC49E] opacity-50 pointer-events-none" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        strokeWidth="0.8"
+                      >
+                        <path d="M5 65 Q15 40 40 40 Q65 40 65 65" />
+                        <path d="M20 65 Q25 48 45 48 Q60 48 55 65" />
+                        <circle cx="40" cy="40" r="2.5" fill="#DEC49E" opacity="0.6" />
+                        <path d="M12 52 C15 45 22 43 28 47" />
+                        <path d="M50 47 C56 43 62 45 65 52" />
+                      </svg>
+
+                      <svg 
+                        viewBox="0 0 70 70" 
+                        className="absolute -bottom-1 -right-1 w-12 h-12 sm:w-14 sm:h-14 text-[#DEC49E] opacity-50 pointer-events-none transform -scale-x-100" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        strokeWidth="0.8"
+                      >
+                        <path d="M5 65 Q15 40 40 40 Q65 40 65 65" />
+                        <path d="M20 65 Q25 48 45 48 Q60 48 55 65" />
+                        <circle cx="40" cy="40" r="2.5" fill="#DEC49E" opacity="0.6" />
+                        <path d="M12 52 C15 45 22 43 28 47" />
+                        <path d="M50 47 C56 43 62 45 65 52" />
+                      </svg>
+
+                      {/* Category & Title */}
+                      <div className="relative z-10">
+                        <span className="text-[10px] sm:text-[11px] font-sans font-bold tracking-[0.2em] text-[#C4924D] uppercase block">
+                          {product.category || 'KURTAS'}
+                        </span>
+                        <h3 className="font-serif text-sm sm:text-base font-medium text-[#270803] group-hover:text-[#5C061C] transition-colors truncate mt-0.5 leading-snug">
+                          {product.title}
+                        </h3>
+                      </div>
+
+                      {/* Pricing Row */}
+                      <div className="mt-1.5 flex items-center gap-2 relative z-10 flex-wrap">
+                        <span className="font-serif font-bold text-lg sm:text-xl text-[#5C061C]">
+                          ₹{product.price.toLocaleString('en-IN')}
+                        </span>
+                        {(product.originalPrice || hasDiscount) && (
+                          <span className="font-sans text-xs sm:text-sm text-[#9E9E9E] line-through font-normal">
+                            ₹{(product.originalPrice || Math.round(product.price * 1.25)).toLocaleString('en-IN')}
                           </span>
-                          <span className="text-[10px] font-sans font-bold text-[#D85179]">
-                            {discountPercent}% OFF
-                          </span>
-                        </>
-                      )}
+                        )}
+                        <span className="text-[9px] sm:text-[10px] font-sans font-bold text-[#8C2436] bg-[#FCE7E6] px-2 py-0.5 rounded-full">
+                          {discountPercent}% OFF
+                        </span>
+                      </div>
+
+                      {/* Add to Cart Button flanked by thin decorative hairlines */}
+                      <div className="mt-2.5 sm:mt-3 flex items-center gap-2 relative z-10">
+                        <span className="h-[1px] flex-1 bg-[#DEC49E]/70" />
+                        <button
+                          type="button"
+                          onClick={(e) => handleQuickAdd(e, product)}
+                          className="px-3.5 sm:px-5 py-1.5 sm:py-2 bg-[#5C061C] hover:bg-[#480516] text-[#FFF9F2] rounded-full text-[10px] sm:text-[11px] font-sans font-bold tracking-wider uppercase flex items-center justify-center gap-1.5 shadow-xs transition-all duration-200 transform active:scale-95 cursor-pointer whitespace-nowrap"
+                        >
+                          <ShoppingBag className="w-3.5 h-3.5" />
+                          <span>ADD TO CART</span>
+                        </button>
+                        <span className="h-[1px] flex-1 bg-[#DEC49E]/70" />
+                      </div>
                     </div>
                   </div>
                 </article>
