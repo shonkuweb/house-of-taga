@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
@@ -180,16 +181,14 @@ const CategoryCard = ({ cat, isSelected, onClick }) => {
 
 export const ShopByCategory = ({ onSelectCategory }) => {
   const { categories, activeCategory, setActiveCategory } = useStore();
+  const navigate = useNavigate();
 
   const handleCategoryClick = (slug) => {
     setActiveCategory(slug);
     if (onSelectCategory) {
       onSelectCategory(slug);
     }
-    const catalogEl = document.getElementById('catalog-section');
-    if (catalogEl) {
-      catalogEl.scrollIntoView({ behavior: 'smooth' });
-    }
+    navigate(`/category/${slug}`);
   };
 
   // Only display categories configured from the admin panel (top-level categories if nested)

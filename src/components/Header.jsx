@@ -137,13 +137,11 @@ export const Header = () => {
   const handleCategoryNav = (slug) => {
     setActiveCategory(slug);
     setIsDrawerOpen(false);
-    navigate('/');
-    setTimeout(() => {
-      const catalogEl = document.getElementById('catalog-section');
-      if (catalogEl) {
-        catalogEl.scrollIntoView({ behavior: 'smooth' });
-      }
-    }, 100);
+    if (slug === 'all') {
+      navigate('/category/all');
+    } else {
+      navigate(`/category/${slug}`);
+    }
   };
 
   const scrollToSection = (id) => {
