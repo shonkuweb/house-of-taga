@@ -116,7 +116,7 @@ export const ProductPage = () => {
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-[#FAF5EF] flex flex-col justify-between">
+      <div className="w-full min-h-screen bg-[#FAF2E9] flex flex-col justify-between">
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
           <h2 className="font-serif text-2xl text-[#241F1C] mb-2">Product Not Found</h2>
           <p className="text-xs text-neutral-500 max-w-sm mb-6">
@@ -176,10 +176,11 @@ export const ProductPage = () => {
   };
 
   return (
-    <div className="bg-[#FAF5EF] pb-20 pt-4 animate-fadeIn min-h-[90vh]">
+    <div className="w-full bg-[#FAF2E9] min-h-screen flex flex-col justify-between animate-fadeIn">
       
-      {/* Breadcrumb Navigation */}
-      <nav aria-label="Breadcrumb" className="max-w-6xl mx-auto px-4 sm:px-6 mb-4">
+      <div className="flex-1 pt-4 pb-12">
+        {/* Breadcrumb Navigation */}
+        <nav aria-label="Breadcrumb" className="max-w-6xl mx-auto px-4 sm:px-6 mb-4">
         <ol className="flex items-center gap-1.5 text-xs text-[#8C6F5A] flex-wrap">
           <li>
             <Link to="/" className="hover:text-[#5C061C] transition-colors">Home</Link>
@@ -582,6 +583,7 @@ export const ProductPage = () => {
           </div>
         )}
 
+      </div>
       </div>
 
       {/* Brand Footer */}
