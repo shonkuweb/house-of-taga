@@ -375,7 +375,7 @@ export const CheckoutPage = () => {
                       type="tel"
                       name="phone"
                       required
-                      placeholder="e.g. 9855786123"
+                      placeholder="e.g. 9096669212"
                       value={formData.phone}
                       onChange={handleInputChange}
                       className="w-full p-3 bg-white border border-[#DEC49E] rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#5C061C] text-[#270803]"

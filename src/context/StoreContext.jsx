@@ -62,28 +62,17 @@ export const StoreProvider = ({ children }) => {
 
   const [storeConfig, setStoreConfig] = useState(() => {
     try {
-      const saved = localStorage.getItem('kundan_config');
+      const saved = localStorage.getItem('taaga_config') || localStorage.getItem('kundan_config');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (
-          parsed.whatsappNumber === '+91 98765 43210' ||
-          parsed.whatsappNumber === '918511556115' ||
-          parsed.whatsappNumber === '+91 85115 56115' ||
-          parsed.whatsappNumber === '+91 85115 56155' ||
-          parsed.whatsappNumber === '8511556155' ||
-          parsed.whatsappNumber === '+91 98557 86123' ||
-          parsed.whatsappNumber === '9855786123' ||
-          parsed.whatsappNumber === '+91 93133 06258' ||
-          parsed.whatsappNumber === '9313306258' ||
-          parsed.whatsappNumber === '919313306258' ||
-          !parsed.whatsappNumber
-        ) {
-          parsed.whatsappNumber = '+91 90966 69212';
+        parsed.whatsappNumber = '+91 90966 69212';
+        parsed.phone = '+91 90966 69212';
+        parsed.paymentUpiId = '9096669212@upi';
+        if (parsed.hero?.belowTicker || parsed.heroBanners?.belowTicker) {
+          if (parsed.hero) parsed.hero.belowTicker = 'House of Taaga · Pune Studio, Maharashtra, India | WhatsApp: +91 90966 69212';
+          if (parsed.heroBanners) parsed.heroBanners.belowTicker = 'House of Taaga · Pune Studio, Maharashtra, India | WhatsApp: +91 90966 69212';
         }
-        if (parsed.hero?.belowTicker?.includes('93133')) {
-          parsed.hero.belowTicker = 'House of Taaga · Pune Studio, Maharashtra, India | WhatsApp: +91 90966 69212';
-        }
-        if (parsed.bannerText?.includes('93133')) {
+        if (parsed.bannerText) {
           parsed.bannerText = 'Handcrafted in Pune · Worldwide & Pan-India Shipping · WhatsApp Orders: +91 90966 69212';
         }
         if (
@@ -368,7 +357,13 @@ export const StoreProvider = ({ children }) => {
       }
 
       if (cfgRes.status === 'fulfilled' && cfgRes.value && typeof cfgRes.value === 'object') {
-        setStoreConfig(prev => ({ ...prev, ...cfgRes.value }));
+        setStoreConfig(prev => ({
+          ...prev,
+          ...cfgRes.value,
+          whatsappNumber: '+91 90966 69212',
+          phone: '+91 90966 69212',
+          paymentUpiId: '9096669212@upi'
+        }));
       }
     } catch (err) {
       console.warn('[StoreContext] Database sync warning:', err.message);
