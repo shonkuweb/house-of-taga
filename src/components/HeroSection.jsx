@@ -1,10 +1,21 @@
 import React, { useState, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useStore } from '../context/StoreContext';
 import heroBannerImg from '../assets/hero-banner.jpg';
 
 export const HeroSection = () => {
+  const { storeConfig } = useStore();
   const [activeSlide, setActiveSlide] = useState(0);
   const touchStartX = useRef(null);
+
+  const customDesktopBanners = Array.isArray(storeConfig?.heroBanners?.desktop) && storeConfig.heroBanners.desktop.length > 0
+    ? storeConfig.heroBanners.desktop
+    : [];
+  const customMobileBanners = Array.isArray(storeConfig?.heroBanners?.mobile) && storeConfig.heroBanners.mobile.length > 0
+    ? storeConfig.heroBanners.mobile
+    : [];
+
+  const currentBanner = customDesktopBanners[activeSlide] || customMobileBanners[activeSlide] || heroBannerImg;
 
   const handleScrollToCatalog = () => {
     const catalogEl = document.getElementById('catalog-section') || document.getElementById('category-section');
@@ -46,21 +57,21 @@ export const HeroSection = () => {
   return (
     <section 
       aria-label="Hero Showcase" 
-      className="w-full bg-[#FAF2E9] overflow-hidden pt-0 sm:pt-4 lg:pt-6"
+      className="w-full bg-[#FAF2E9] overflow-hidden pt-0"
     >
       {/* 
-        Hero Banner: Edge-to-edge on mobile, elegantly framed with subtle borders & rounded corners on desktop.
-        Preserving the original composition, aspect ratio, photography, and decorative artwork.
+        Hero Banner: Edge-to-edge full width across mobile and desktop.
+        Fits 100% of the screen width seamlessly, preserving the 16:9 composition and accessible CTA overlay.
       */}
       <div 
-        className="w-full max-w-7xl mx-auto sm:px-4 lg:px-8 relative select-none"
+        className="w-full relative select-none"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="relative w-full aspect-[16/9] overflow-hidden bg-[#FAF2E9] sm:rounded-2xl lg:rounded-3xl sm:border sm:border-[#E8D9C8] sm:shadow-card cursor-pointer group">
+        <div className="relative w-full aspect-[16/9] overflow-hidden bg-[#FAF2E9] cursor-pointer group">
           
           <img 
-            src={heroBannerImg}
+            src={currentBanner}
             onError={(e) => {
               if (e.target.src !== window.location.origin + '/hero-banner.jpg') {
                 e.target.src = '/hero-banner.jpg';
@@ -87,7 +98,7 @@ export const HeroSection = () => {
           {/* Desktop Hover Navigation Arrows */}
           <button
             onClick={handlePrev}
-            className="hidden lg:flex absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/70 hover:bg-white text-[#382017] items-center justify-center shadow-md backdrop-blur-xs opacity-0 group-hover:opacity-90 transition-all duration-300 transform -translate-x-2 group-hover:translate-x-0 z-20 cursor-pointer"
+            className="hidden lg:flex absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/70 hover:bg-white text-[#382017] items-center justify-center shadow-md backdrop-blur-xs opacity-0 group-hover:opacity-90 transition-all duration-300 transform -translate-x-2 group-hover:translate-x-0 z-20 cursor-pointer"
             aria-label="Previous Slide"
           >
             <ChevronLeft className="w-5 h-5 stroke-[2]" />
@@ -95,7 +106,7 @@ export const HeroSection = () => {
 
           <button
             onClick={handleNext}
-            className="hidden lg:flex absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/70 hover:bg-white text-[#382017] items-center justify-center shadow-md backdrop-blur-xs opacity-0 group-hover:opacity-90 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0 z-20 cursor-pointer"
+            className="hidden lg:flex absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/70 hover:bg-white text-[#382017] items-center justify-center shadow-md backdrop-blur-xs opacity-0 group-hover:opacity-90 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0 z-20 cursor-pointer"
             aria-label="Next Slide"
           >
             <ChevronRight className="w-5 h-5 stroke-[2]" />
